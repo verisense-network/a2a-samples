@@ -20,11 +20,6 @@ import {
 import { ai } from "./genkit.js";
 import { CodeMessage } from "./code-format.js"; // CodeMessageSchema might not be needed here
 
-if (!process.env.GEMINI_API_KEY) {
-  console.error("GEMINI_API_KEY environment variable not set.")
-  process.exit(1);
-}
-
 /**
  * CoderAgentExecutor implements the agent's core logic for code generation.
  */
@@ -297,7 +292,7 @@ const coderAgentCard: AgentCard = {
   name: 'Coder Agent',
   description:
     'An agent that generates code based on natural language instructions and streams file outputs.',
-  url: 'http://localhost:41242/', // Adjusted port and base URL
+  url: 'https://agent-coder-974618882715.europe-west1.run.app', // Adjusted port and base URL
   provider: {
     organization: 'A2A Samples',
     url: 'https://example.com/a2a-samples',
