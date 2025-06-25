@@ -69,10 +69,10 @@ public class A2AServerConfiguration {
         return new AgentCard(
             "AI Translation Bot",
             "Professional AI translation service powered by advanced language models. Supports translation between multiple languages with high accuracy and context awareness.",
-            "https://agent-translator-974618882715.europe-west1.run.app/a2a/stream",
+            "https://translator-974618882715.europe-west1.run.app/a2a/stream",
             provider,
             "1.0.0",
-            "https://agent-translator-974618882715.europe-west1.run.app/docs",
+            "https://translator-974618882715.europe-west1.run.app/docs",
             capabilities,
             authentication,
             List.of("text"),
