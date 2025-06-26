@@ -21,7 +21,7 @@ if __name__ == '__main__':
     agent_card = AgentCard(
         name='travel planner Agent',
         description='travel planner',
-        url='http://localhost:8080/',
+        url='https://travel-planner-974618882715.europe-west1.run.app',
         version='1.0.0',
         defaultInputModes=['text'],
         defaultOutputModes=['text'],
