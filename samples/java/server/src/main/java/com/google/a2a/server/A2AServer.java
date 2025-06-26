@@ -30,6 +30,16 @@ public class A2AServer {
         this.objectMapper = objectMapper;
     }
 
+    public JSONRPCResponse handleMessageSend(JSONRPCRequest request) {
+        try {
+            MessageSendParams params = parseParams(request.params(), MessageSendParams.class);
+            String contentId = UUID.randomUUID().toString();
+
+        } catch (Exception e) {
+            return createErrorResponse(request.id(), ErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
     /**
      * Handle task send request
      */
