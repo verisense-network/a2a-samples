@@ -5,9 +5,11 @@ import sys
 from collections.abc import AsyncGenerator
 from typing import Any
 
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+load_dotenv()
 
 class TravelPlannerAgent:
     """travel planner Agent."""

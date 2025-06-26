@@ -8,7 +8,7 @@ from a2a.types import (
     TaskStatus,
     TaskStatusUpdateEvent,
 )
-from a2a.utils import new_text_artifact
+from a2a.utils import new_agent_text_message, new_task, new_text_artifact
 from agent import TravelPlannerAgent
 
 
@@ -28,26 +28,55 @@ class TravelPlannerAgentExecutor(AgentExecutor):
         if not context.message:
             raise Exception('No message provided')
 
-        async for event in self.agent.stream(query):
-            message = TaskArtifactUpdateEvent(
-                contextId=context.context_id, # type: ignore
-                taskId=context.task_id, # type: ignore
-                artifact=new_text_artifact(
-                    name='current_result',
-                    text=event['content'],
-                ),
-            )
-            await event_queue.enqueue_event(message)
-            if event['done']:
-                break
+        task = context.current_task
+        if not task:
+            task = new_task(context.message)
+            await event_queue.enqueue_event(task)
 
-        status = TaskStatusUpdateEvent(
-            contextId=context.context_id, # type: ignore
-            taskId=context.task_id, # type: ignore
-            status=TaskStatus(state=TaskState.completed),
-            final=True
-        )
-        await event_queue.enqueue_event(status)
+        accumulated_content = ""
+
+        async for event in self.agent.stream(query):
+            if event['done']:
+                await event_queue.enqueue_event(
+                    TaskArtifactUpdateEvent(
+                        append=False,
+                        contextId=task.contextId,
+                        taskId=task.id,
+                        lastChunk=True,
+                        artifact=new_text_artifact(
+                            name='travel_plan_result',
+                            description='Travel planning result',
+                            text=accumulated_content,
+                        ),
+                    )
+                )
+                await event_queue.enqueue_event(
+                    TaskStatusUpdateEvent(
+                        status=TaskStatus(state=TaskState.completed),
+                        final=True,
+                        contextId=task.contextId,
+                        taskId=task.id,
+                    )
+                )
+                break
+            else:
+                accumulated_content += event['content']
+
+                await event_queue.enqueue_event(
+                    TaskStatusUpdateEvent(
+                        status=TaskStatus(
+                            state=TaskState.working,
+                            message=new_agent_text_message(
+                                event['content'],
+                                task.contextId,
+                                task.id,
+                            ),
+                        ),
+                        final=False,
+                        contextId=task.contextId,
+                        taskId=task.id,
+                    )
+                )
 
     @override
     async def cancel(
