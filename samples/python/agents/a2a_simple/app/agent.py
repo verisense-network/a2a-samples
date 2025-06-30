@@ -9,6 +9,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import MessagesState, StateGraph, START, END
 from pydantic import BaseModel
 
+from .tools import get_btc_price
+
 
 memory = MemorySaver()
 
@@ -45,6 +47,7 @@ class PromptBasedAgent:
             )
 
         self.system_prompt = system_prompt or "You are a helpful AI assistant."
+        self.tools = [get_btc_price]
 
     def _call_model(self, state: MessagesState):
         """Call the language model with the system prompt and messages."""
@@ -87,14 +90,45 @@ class PromptBasedAgent:
             # Build messages with system prompt
             system_message = f"{self.system_prompt}\n\n{self.FORMAT_INSTRUCTION}"
             messages = [("system", system_message), ("user", query)]
-            # Direct call to Vertex AI with structured output
-            structured_model = self.model.with_structured_output(ResponseFormat)
-            response = structured_model.invoke(messages)
-            yield {
-                "is_task_complete": True,
-                "require_user_input": False,
-                "content": response.message,
-            }
+            
+            # Bind tools to model for this call
+            model_with_tools = self.model.bind_tools(self.tools)
+            
+            # Call model with tools
+            response = model_with_tools.invoke(messages)
+            
+            # Check if model wants to use tools
+            if hasattr(response, 'tool_calls') and response.tool_calls:
+                # Execute tool calls
+                tool_results = []
+                for tool_call in response.tool_calls:
+                    if tool_call["name"] == "get_btc_price":
+                        result = get_btc_price.invoke(tool_call["args"])
+                        tool_results.append(result)
+                
+                # Add tool results to messages and call model again
+                messages.append(("assistant", response))
+                for i, result in enumerate(tool_results):
+                    messages.append(("tool", str(result)))
+                
+                # Get final response with structured output
+                structured_model = self.model.with_structured_output(ResponseFormat)
+                final_response = structured_model.invoke(messages)
+                
+                yield {
+                    "is_task_complete": True,
+                    "require_user_input": False,
+                    "content": final_response.message,
+                }
+            else:
+                # No tool calls, get structured response directly
+                structured_model = self.model.with_structured_output(ResponseFormat)
+                response = structured_model.invoke(messages)
+                yield {
+                    "is_task_complete": True,
+                    "require_user_input": False,
+                    "content": response.message,
+                }
             # Return response based on status
             # if response.status == "input_required":
             #     yield {

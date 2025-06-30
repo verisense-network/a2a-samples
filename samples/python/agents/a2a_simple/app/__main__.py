@@ -99,8 +99,8 @@ def main(host, port, agent_index):
         agent_card = AgentCard(
             name=agent_name,
             description=f"{agent_name} - AI Assistant",
-            url=f"http://34.57.6.105/p{port}",
-            # url=f"http://localhost:{port}",
+            # url=f"http://34.57.6.105/p{port}",
+            url=f"http://localhost:{port}",
             version="1.0.0",
             defaultInputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
             defaultOutputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
