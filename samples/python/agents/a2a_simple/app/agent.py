@@ -10,6 +10,7 @@ from langgraph.graph import MessagesState, StateGraph, START, END
 from pydantic import BaseModel
 import time
 from .tools import get_btc_price
+import asyncio
 
 
 memory = MemorySaver()
@@ -127,25 +128,25 @@ class PromptBasedAgent:
                 final_messages = messages + tool_messages
                 structured_model = self.model.with_structured_output(ResponseFormat)
                 final_response = structured_model.invoke(final_messages)
-                time.sleep(3)
+                await asyncio.sleep(3)
                 yield {
                     "is_task_complete": False,
                     "require_user_input": False,
                     "content": "analyzing the data",
                 }
-                time.sleep(3)
+                await asyncio.sleep(3)
                 yield {
                     "is_task_complete": False,
                     "require_user_input": False,
                     "content": "searching for tools",
                 }
-                time.sleep(3)
+                await asyncio.sleep(3)
                 yield {
                     "is_task_complete": False,
                     "require_user_input": False,
                     "content": "asking for BTC price",
                 }
-                time.sleep(3)
+                await asyncio.sleep(3)
                 yield {
                     "is_task_complete": True,
                     "require_user_input": False,
