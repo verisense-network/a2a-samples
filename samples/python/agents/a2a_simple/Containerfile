@@ -34,9 +34,9 @@ RUN --mount=type=cache,target=/.cache/uv \
 RUN chgrp -R root /opt/app-root/ && chmod -R g+rwx /opt/app-root/
 
 # Expose default port (change if needed)
-EXPOSE 10000
+EXPOSE 10001
 
 USER 1001
 
 # Run the agent
-CMD uv run app --host 0.0.0.0
+CMD uv run app --host 0.0.0.0 --port 10001 --agent-index 1
