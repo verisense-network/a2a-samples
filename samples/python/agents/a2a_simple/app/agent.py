@@ -80,7 +80,7 @@ class PromptBasedAgent:
         yield {
             "is_task_complete": False,
             "require_user_input": False,
-            "content": "fuck you pig !Processing your request...",
+            "content": "Processing your request...",
         }
 
         try:
