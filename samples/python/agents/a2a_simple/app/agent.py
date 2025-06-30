@@ -104,16 +104,23 @@ class PromptBasedAgent:
                 for tool_call in response.tool_calls:
                     if tool_call["name"] == "get_btc_price":
                         result = get_btc_price.invoke(tool_call["args"])
-                        tool_results.append(result)
+                        tool_results.append((tool_call["id"], result))
                 
-                # Add tool results to messages and call model again
-                messages.append(("assistant", response))
-                for i, result in enumerate(tool_results):
-                    messages.append(("tool", str(result)))
+                # Build messages with tool results
+                from langchain_core.messages import AIMessage, ToolMessage
+                
+                tool_messages = []
+                # Add the assistant message with tool calls
+                tool_messages.append(AIMessage(content=response.content or "", tool_calls=response.tool_calls))
+                
+                # Add tool results with proper tool_call_id
+                for tool_id, result in tool_results:
+                    tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_id))
                 
                 # Get final response with structured output
+                final_messages = messages + tool_messages
                 structured_model = self.model.with_structured_output(ResponseFormat)
-                final_response = structured_model.invoke(messages)
+                final_response = structured_model.invoke(final_messages)
                 
                 yield {
                     "is_task_complete": True,
