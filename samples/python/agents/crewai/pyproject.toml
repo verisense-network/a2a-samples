@@ -9,6 +9,8 @@ dependencies = [
     "google-genai>=1.9.0",
     "a2a-samples",
 ]
+[tool.uv.dependencies]
+aiohappyeyeballs = "2.6.1"
 
 [tool.uv.sources]
 a2a-samples = { workspace = true }
