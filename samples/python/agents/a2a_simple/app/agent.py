@@ -90,11 +90,6 @@ class PromptBasedAgent:
             # Direct call to Vertex AI with structured output
             structured_model = self.model.with_structured_output(ResponseFormat)
             response = structured_model.invoke(messages)
-            yield {
-                "is_task_complete": False,
-                "require_user_input": True,
-                "content": str(response),
-            }
             # Return response based on status
             if response.status == "input_required":
                 yield {
