@@ -90,31 +90,36 @@ class PromptBasedAgent:
             # Direct call to Vertex AI with structured output
             structured_model = self.model.with_structured_output(ResponseFormat)
             response = structured_model.invoke(messages)
+            yield {
+                "is_task_complete": True,
+                "require_user_input": False,
+                "content": "fuck you",
+            }
             # Return response based on status
-            if response.status == "input_required":
-                yield {
-                    "is_task_complete": False,
-                    "require_user_input": True,
-                    "content": response.message,
-                }
-            elif response.status == "error":
-                yield {
-                    "is_task_complete": False,
-                    "require_user_input": True,
-                    "content": response.message,
-                }
-            elif response.status == "completed":
-                yield {
-                    "is_task_complete": True,
-                    "require_user_input": False,
-                    "content": response.message,
-                }
-            else:
-                yield {
-                    "is_task_complete": False,
-                    "require_user_input": True,
-                    "content": "Invalid response status",
-                }
+            # if response.status == "input_required":
+            #     yield {
+            #         "is_task_complete": False,
+            #         "require_user_input": True,
+            #         "content": response.message,
+            #     }
+            # elif response.status == "error":
+            #     yield {
+            #         "is_task_complete": False,
+            #         "require_user_input": True,
+            #         "content": response.message,
+            #     }
+            # elif response.status == "completed":
+            #     yield {
+            #         "is_task_complete": True,
+            #         "require_user_input": False,
+            #         "content": response.message,
+            #     }
+            # else:
+            #     yield {
+            #         "is_task_complete": False,
+            #         "require_user_input": True,
+            #         "content": "Invalid response status",
+            #     }
 
         except Exception as e:
             import logging
