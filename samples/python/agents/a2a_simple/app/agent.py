@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import MessagesState, StateGraph, START, END
 from pydantic import BaseModel
-
+import time
 from .tools import get_btc_price
 
 
@@ -90,38 +90,62 @@ class PromptBasedAgent:
             # Build messages with system prompt
             system_message = f"{self.system_prompt}\n\n{self.FORMAT_INSTRUCTION}"
             messages = [("system", system_message), ("user", query)]
-            
+
             # Bind tools to model for this call
             model_with_tools = self.model.bind_tools(self.tools)
-            
+
             # Call model with tools
             response = model_with_tools.invoke(messages)
-            
+
             # Check if model wants to use tools
-            if hasattr(response, 'tool_calls') and response.tool_calls:
+            if hasattr(response, "tool_calls") and response.tool_calls:
                 # Execute tool calls
                 tool_results = []
                 for tool_call in response.tool_calls:
                     if tool_call["name"] == "get_btc_price":
                         result = get_btc_price.invoke(tool_call["args"])
                         tool_results.append((tool_call["id"], result))
-                
+
                 # Build messages with tool results
                 from langchain_core.messages import AIMessage, ToolMessage
-                
+
                 tool_messages = []
                 # Add the assistant message with tool calls
-                tool_messages.append(AIMessage(content=response.content or "", tool_calls=response.tool_calls))
-                
+                tool_messages.append(
+                    AIMessage(
+                        content=response.content or "", tool_calls=response.tool_calls
+                    )
+                )
+
                 # Add tool results with proper tool_call_id
                 for tool_id, result in tool_results:
-                    tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_id))
-                
+                    tool_messages.append(
+                        ToolMessage(content=str(result), tool_call_id=tool_id)
+                    )
+
                 # Get final response with structured output
                 final_messages = messages + tool_messages
                 structured_model = self.model.with_structured_output(ResponseFormat)
                 final_response = structured_model.invoke(final_messages)
-                
+                time.sleep(3)
+                yield {
+                    "is_task_complete": False,
+                    "require_user_input": False,
+                    "content": "analyzing the data",
+                }
+                time.sleep(3)
+                yield {
+                    "is_task_complete": False,
+                    "require_user_input": False,
+                    "content": "searching for tools",
+                }
+                time.sleep(3)
+                yield {
+                    "is_task_complete": False,
+                    "require_user_input": False,
+                    "content": "asking for BTC price",
+                }
+                time.sleep(3)
                 yield {
                     "is_task_complete": True,
                     "require_user_input": False,
