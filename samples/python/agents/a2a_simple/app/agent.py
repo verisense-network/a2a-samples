@@ -93,8 +93,8 @@ class PromptBasedAgent:
             # Return response based on status
             if response.status == "input_required":
                 yield {
-                    "is_task_complete": False,
-                    "require_user_input": True,
+                    "is_task_complete": True,
+                    "require_user_input": False,
                     "content": response.message,
                 }
             elif response.status == "error":
