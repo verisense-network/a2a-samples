@@ -56,7 +56,7 @@ class PromptAgentExecutor(AgentExecutor):
                     await updater.update_status(
                         TaskState.working,
                         new_agent_text_message(
-                            "⏲️ " + item["content"] + "\n",
+                            "⏲️ " + item["content"] + "\\n",
                             task.contextId,
                             task.id,
                         ),
