@@ -27,7 +27,7 @@ logging.basicConfig()
 
 @click.command()
 @click.option('--host', 'host', default='localhost')
-@click.option('--port', 'port', default=10007)
+@click.option('--port', 'port', default=8080)
 def main(host: str, port: int):
     # Verify an API key is set.
     if not os.getenv('OPENAI_API_KEY'):
@@ -49,7 +49,7 @@ def main(host: str, port: int):
     agent_card = AgentCard(
         name='GitHub Agent',
         description='An agent that can query GitHub repositories and recent project updates',
-        url=f'http://{host}:{port}/',
+        url=f'https://github-agent-974618882715.us-east1.run.app',
         version='1.0.0',
         defaultInputModes=['text'],
         defaultOutputModes=['text'],
