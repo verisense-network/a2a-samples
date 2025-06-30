@@ -77,15 +77,15 @@ class PromptBasedAgent:
 
     async def stream(self, query, context_id) -> AsyncIterable[dict[str, Any]]:
         # Direct call to Vertex AI without LangGraph and memory
-        yield {
-            "is_task_complete": False,
-            "require_user_input": False,
-            "content": "Processing your request...",
-        }
+        # yield {
+        #     "is_task_complete": False,
+        #     "require_user_input": False,
+        #     "content": "Processing your request...",
+        # }
 
         try:
             # Build messages with system prompt
-            system_message = f"{self.system_prompt}"
+            system_message = f"{self.system_prompt}\n\n{self.FORMAT_INSTRUCTION}"
             messages = [("system", system_message), ("user", query)]
             # Direct call to Vertex AI with structured output
             structured_model = self.model.with_structured_output(ResponseFormat)
