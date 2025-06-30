@@ -50,6 +50,7 @@ class PromptAgentExecutor(AgentExecutor):
             async for item in self.agent.stream(query, task.contextId):
                 is_task_complete = item["is_task_complete"]
                 require_user_input = item["require_user_input"]
+                print("agent_executor.py:53", item)
 
                 if not is_task_complete and not require_user_input:
                     await updater.update_status(
