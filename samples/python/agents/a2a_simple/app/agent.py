@@ -111,7 +111,7 @@ class PromptBasedAgent:
 
                     # Split the context into segments
                     segments = re.split(r"\[(user|agent)\]", context_text)
-
+                    print(segments)
                     # Process segments (skip first empty segment if exists)
                     i = 0
                     while i < len(segments):
