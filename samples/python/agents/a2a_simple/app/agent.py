@@ -48,6 +48,7 @@ class PromptBasedAgent:
             )
 
         self.system_prompt = system_prompt or "You are a helpful AI assistant."
+        self.tools = None
         if use_tools:
             self.tools = use_tools
 
@@ -92,6 +93,7 @@ class PromptBasedAgent:
             # Build messages with system prompt
             system_message = f"{self.system_prompt}\n\n{self.FORMAT_INSTRUCTION}"
             messages = [("system", system_message), ("user", query)]
+            # if self
             if self.tools:
                 # Bind tools to model for this call
                 model_with_tools = self.model.bind_tools(self.tools)
