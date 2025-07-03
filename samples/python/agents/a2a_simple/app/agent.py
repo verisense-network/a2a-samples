@@ -98,7 +98,6 @@ class PromptBasedAgent:
 
             # Add conversation history from parts if available
             if conversation_parts and len(conversation_parts) > 0:
-                print(conversation_parts[0].root.kind, conversation_parts[0].root.text)
                 # Parts[0] contains the conversation context with [user] and [agent] markers
                 if (
                     hasattr(conversation_parts[0], "kind")
@@ -112,7 +111,8 @@ class PromptBasedAgent:
 
                     # Split the context into segments
                     segments = re.split(r"\[(user|agent)\]", context_text)
-                    print(segments)
+                    for i, segment in enumerate(segments):
+                        print(i, segment)
                     # Process segments (skip first empty segment if exists)
                     i = 0
                     while i < len(segments):
