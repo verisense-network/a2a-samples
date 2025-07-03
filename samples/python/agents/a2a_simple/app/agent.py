@@ -97,6 +97,8 @@ class PromptBasedAgent:
             if self.tools:
                 # Bind tools to model for this call
                 model_with_tools = self.model.bind_tools(self.tools)
+            else:
+                model_with_tools = self.model
 
             # Call model with tools
             response = model_with_tools.invoke(messages)
@@ -131,25 +133,25 @@ class PromptBasedAgent:
                 final_messages = messages + tool_messages
                 structured_model = self.model.with_structured_output(ResponseFormat)
                 final_response = structured_model.invoke(final_messages)
-                await asyncio.sleep(3)
-                yield {
-                    "is_task_complete": False,
-                    "require_user_input": False,
-                    "content": "analyzing the data",
-                }
-                await asyncio.sleep(3)
-                yield {
-                    "is_task_complete": False,
-                    "require_user_input": False,
-                    "content": "searching for tools",
-                }
-                await asyncio.sleep(3)
-                yield {
-                    "is_task_complete": False,
-                    "require_user_input": False,
-                    "content": "asking for BTC price",
-                }
-                await asyncio.sleep(3)
+                # await asyncio.sleep(3)
+                # yield {
+                #     "is_task_complete": False,
+                #     "require_user_input": False,
+                #     "content": "analyzing the data",
+                # }
+                # await asyncio.sleep(3)
+                # yield {
+                #     "is_task_complete": False,
+                #     "require_user_input": False,
+                #     "content": "searching for tools",
+                # }
+                # await asyncio.sleep(3)
+                # yield {
+                #     "is_task_complete": False,
+                #     "require_user_input": False,
+                #     "content": "asking for BTC price",
+                # }
+                # await asyncio.sleep(3)
                 yield {
                     "is_task_complete": True,
                     "require_user_input": False,
