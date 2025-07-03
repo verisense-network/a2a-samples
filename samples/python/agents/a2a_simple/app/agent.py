@@ -94,7 +94,9 @@ class PromptBasedAgent:
         try:
             # Build messages with system prompt
             memory_instruction = "\n\nIMPORTANT: You have access to the conversation history below. Please maintain continuity by remembering information from previous messages and referring to it when relevant. If a user mentions something in an earlier message, you should remember and use that information in your responses."
-            system_message = f"{self.system_prompt}{memory_instruction}\n\n{self.FORMAT_INSTRUCTION}"
+            system_message = (
+                f"{self.system_prompt}{memory_instruction}\n\n{self.FORMAT_INSTRUCTION}"
+            )
             messages = [("system", system_message)]
 
             # Add conversation history from parts if available
@@ -113,7 +115,7 @@ class PromptBasedAgent:
 
                     # Split the context into segments
                     segments = re.split(r"\[(user|agent)\]", context_text)
-                    
+
                     # Note: The conversation history should ideally only include messages
                     # relevant to the current agent to avoid confusion. If multiple agents
                     # are involved, consider filtering messages by agent ID or name.
@@ -140,11 +142,13 @@ class PromptBasedAgent:
                         else:
                             i += 1
                 # Keep only the system message and last 10 conversation messages
-                if len(messages) > 11:  # 1 system message + 10 conversation messages
-                    messages = [messages[0]] + messages[-10:]
-                
+                if len(messages) > 20:  # 1 system message + 19 conversation messages
+                    messages = [messages[0]] + messages[-19:]
+
                 # Debug: Print conversation history being sent to AI
-                print(f"\n=== Conversation History (Total: {len(messages)} messages) ===")
+                print(
+                    f"\n=== Conversation History (Total: {len(messages)} messages) ==="
+                )
                 for i, (role, content) in enumerate(messages):
                     preview = content[:100] + "..." if len(content) > 100 else content
                     print(f"[{i}] {role}: {preview}")
