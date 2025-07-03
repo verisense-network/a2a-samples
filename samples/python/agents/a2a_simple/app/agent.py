@@ -93,7 +93,8 @@ class PromptBasedAgent:
 
         try:
             # Build messages with system prompt
-            system_message = f"{self.system_prompt}\n\n{self.FORMAT_INSTRUCTION}"
+            memory_instruction = "\n\nIMPORTANT: You have access to the conversation history below. Please maintain continuity by remembering information from previous messages and referring to it when relevant. If a user mentions something in an earlier message, you should remember and use that information in your responses."
+            system_message = f"{self.system_prompt}{memory_instruction}\n\n{self.FORMAT_INSTRUCTION}"
             messages = [("system", system_message)]
 
             # Add conversation history from parts if available
@@ -112,6 +113,10 @@ class PromptBasedAgent:
 
                     # Split the context into segments
                     segments = re.split(r"\[(user|agent)\]", context_text)
+                    
+                    # Note: The conversation history should ideally only include messages
+                    # relevant to the current agent to avoid confusion. If multiple agents
+                    # are involved, consider filtering messages by agent ID or name.
                     # for i, segment in enumerate(segments):
                     #     print(i, segment)
                     # Process segments (skip first empty segment if exists)
@@ -138,8 +143,12 @@ class PromptBasedAgent:
                 if len(messages) > 11:  # 1 system message + 10 conversation messages
                     messages = [messages[0]] + messages[-10:]
                 
-                for message in messages:
-                    print(f"Message: {message}")
+                # Debug: Print conversation history being sent to AI
+                print(f"\n=== Conversation History (Total: {len(messages)} messages) ===")
+                for i, (role, content) in enumerate(messages):
+                    preview = content[:100] + "..." if len(content) > 100 else content
+                    print(f"[{i}] {role}: {preview}")
+                print("=" * 50 + "\n")
                 # Parts[1] contains the newest message
                 if (
                     hasattr(conversation_parts[1], "root")
