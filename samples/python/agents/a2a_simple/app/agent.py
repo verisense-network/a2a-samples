@@ -100,11 +100,12 @@ class PromptBasedAgent:
             if conversation_parts and len(conversation_parts) > 0:
                 # Parts[0] contains the conversation context with [user] and [agent] markers
                 if (
-                    hasattr(conversation_parts[0], "kind")
-                    and conversation_parts[0].kind == "text"
-                    and hasattr(conversation_parts[0], "text")
+                    hasattr(conversation_parts[0], "root")
+                    and hasattr(conversation_parts[0].root, "kind")
+                    and conversation_parts[0].root.kind == "text"
+                    and hasattr(conversation_parts[0].root, "text")
                 ):
-                    context_text = conversation_parts[0].text
+                    context_text = conversation_parts[0].root.text
 
                     # Split by [user] and [agent] markers
                     import re
@@ -137,10 +138,11 @@ class PromptBasedAgent:
                     print(f"Message: {message}")
                 # Parts[1] contains the newest message
                 if (
-                    len(conversation_parts) > 1
-                    and hasattr(conversation_parts[1], "kind")
-                    and conversation_parts[1].kind == "text"
-                    and hasattr(conversation_parts[1], "text")
+                    hasattr(conversation_parts[1], "root")
+                    and hasattr(conversation_parts[1].root, "kind")
+                    and conversation_parts[1].root.kind == "text"
+                    and hasattr(conversation_parts[1].root, "text")
+                    and len(conversation_parts) > 1
                 ):
                     messages.append(("user", conversation_parts[1].text))
                 else:
