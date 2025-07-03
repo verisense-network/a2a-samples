@@ -112,8 +112,8 @@ class PromptBasedAgent:
 
                     # Split the context into segments
                     segments = re.split(r"\[(user|agent)\]", context_text)
-                    for i, segment in enumerate(segments):
-                        print(i, segment)
+                    # for i, segment in enumerate(segments):
+                    #     print(i, segment)
                     # Process segments (skip first empty segment if exists)
                     i = 0
                     while i < len(segments):
@@ -144,7 +144,7 @@ class PromptBasedAgent:
                     and hasattr(conversation_parts[1].root, "text")
                     and len(conversation_parts) > 1
                 ):
-                    messages.append(("user", conversation_parts[1].text))
+                    messages.append(("user", conversation_parts[1].root.text))
                 else:
                     # If no parts[1], use the query parameter
                     messages.append(("user", query))
