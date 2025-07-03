@@ -92,9 +92,9 @@ class PromptBasedAgent:
             # Build messages with system prompt
             system_message = f"{self.system_prompt}\n\n{self.FORMAT_INSTRUCTION}"
             messages = [("system", system_message), ("user", query)]
-
-            # Bind tools to model for this call
-            model_with_tools = self.model.bind_tools(self.tools)
+            if self.tools:
+                # Bind tools to model for this call
+                model_with_tools = self.model.bind_tools(self.tools)
 
             # Call model with tools
             response = model_with_tools.invoke(messages)
