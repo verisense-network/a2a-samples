@@ -134,6 +134,10 @@ class PromptBasedAgent:
                             i += 2
                         else:
                             i += 1
+                # Keep only the system message and last 10 conversation messages
+                if len(messages) > 11:  # 1 system message + 10 conversation messages
+                    messages = [messages[0]] + messages[-10:]
+                
                 for message in messages:
                     print(f"Message: {message}")
                 # Parts[1] contains the newest message
