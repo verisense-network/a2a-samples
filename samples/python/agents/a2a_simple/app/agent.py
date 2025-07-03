@@ -1,6 +1,6 @@
 import os
 from collections.abc import AsyncIterable
-from typing import Any, Literal
+from typing import Any, Literal, List
 
 from langchain_core.messages import AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -32,7 +32,7 @@ class PromptBasedAgent:
         "Set response status to completed if the request is complete."
     )
 
-    def __init__(self, system_prompt: str = None):
+    def __init__(self, system_prompt: str = None, use_tools: List[BaseModel] = None):
         model_source = os.getenv("model_source", "google")
         if model_source == "google":
             self.model = ChatGoogleGenerativeAI(
@@ -48,7 +48,8 @@ class PromptBasedAgent:
             )
 
         self.system_prompt = system_prompt or "You are a helpful AI assistant."
-        self.tools = [get_btc_price]
+        if use_tools:
+            self.tools = use_tools
 
     def _call_model(self, state: MessagesState):
         """Call the language model with the system prompt and messages."""

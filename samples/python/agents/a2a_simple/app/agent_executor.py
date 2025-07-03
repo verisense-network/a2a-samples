@@ -16,6 +16,8 @@ from a2a.utils import (
     new_agent_text_message,
     new_task,
 )
+from typing import List
+from pydantic import BaseModel
 from a2a.utils.errors import ServerError
 
 from app.agent import PromptBasedAgent
@@ -28,8 +30,8 @@ logger = logging.getLogger(__name__)
 class PromptAgentExecutor(AgentExecutor):
     """Prompt-based AgentExecutor."""
 
-    def __init__(self, system_prompt: str = None):
-        self.agent = PromptBasedAgent(system_prompt)
+    def __init__(self, system_prompt: str = None, use_tools: List[BaseModel] = None):
+        self.agent = PromptBasedAgent(system_prompt, use_tools)
 
     async def execute(
         self,

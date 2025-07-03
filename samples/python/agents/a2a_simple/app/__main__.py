@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 
 from app.agent import PromptBasedAgent
 from app.agent_executor import PromptAgentExecutor
+from app.tools import get_btc_price
 
 
 load_dotenv()
@@ -111,7 +112,10 @@ def main(host, port, agent_index):
         # --8<-- [start:DefaultRequestHandler]
         httpx_client = httpx.AsyncClient()
         request_handler = DefaultRequestHandler(
-            agent_executor=PromptAgentExecutor(system_prompt=agent_prompt),
+            agent_executor=PromptAgentExecutor(
+                system_prompt=agent_prompt,
+                use_tools=[get_btc_price] if agent_index == 2 else None,
+            ),
             task_store=InMemoryTaskStore(),
             push_notifier=InMemoryPushNotifier(httpx_client),
         )
