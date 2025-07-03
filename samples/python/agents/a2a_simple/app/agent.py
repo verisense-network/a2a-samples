@@ -98,6 +98,7 @@ class PromptBasedAgent:
 
             # Add conversation history from parts if available
             if conversation_parts and len(conversation_parts) > 0:
+                print(conversation_parts)
                 # Parts[0] contains the conversation context with [user] and [agent] markers
                 if (
                     hasattr(conversation_parts[0], "kind")
