@@ -43,13 +43,19 @@ class PromptAgentExecutor(AgentExecutor):
             raise ServerError(error=InvalidParamsError())
 
         query = context.get_user_input()
+        
+        # Extract conversation history from message parts
+        conversation_parts = []
+        if context.message and hasattr(context.message, 'parts'):
+            conversation_parts = context.message.parts
+        
         task = context.current_task
         if not task:
             task = new_task(context.message)  # type: ignore
             await event_queue.enqueue_event(task)
         updater = TaskUpdater(event_queue, task.id, task.contextId)
         try:
-            async for item in self.agent.stream(query, task.contextId):
+            async for item in self.agent.stream(query, task.contextId, conversation_parts):
                 is_task_complete = item["is_task_complete"]
                 require_user_input = item["require_user_input"]
                 print("agent_executor.py:53", item)

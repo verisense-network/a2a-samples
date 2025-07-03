@@ -81,7 +81,7 @@ class PromptBasedAgent:
                 "structured_response": ResponseFormat(status="error", message=str(e)),
             }
 
-    async def stream(self, query, context_id) -> AsyncIterable[dict[str, Any]]:
+    async def stream(self, query, context_id, conversation_parts=None) -> AsyncIterable[dict[str, Any]]:
         # Direct call to Vertex AI without LangGraph and memory
         # yield {
         #     "is_task_complete": False,
@@ -92,7 +92,50 @@ class PromptBasedAgent:
         try:
             # Build messages with system prompt
             system_message = f"{self.system_prompt}\n\n{self.FORMAT_INSTRUCTION}"
-            messages = [("system", system_message), ("user", query)]
+            messages = [("system", system_message)]
+            
+            # Add conversation history from parts if available
+            if conversation_parts and len(conversation_parts) > 0:
+                # Parts[0] contains the conversation context with [user] and [agent] markers
+                if hasattr(conversation_parts[0], 'kind') and conversation_parts[0].kind == 'text' and hasattr(conversation_parts[0], 'text'):
+                    context_text = conversation_parts[0].text
+                    
+                    # Split by [user] and [agent] markers
+                    import re
+                    
+                    # Split the context into segments
+                    segments = re.split(r'\[(user|agent)\]', context_text)
+                    
+                    # Process segments (skip first empty segment if exists)
+                    i = 0
+                    while i < len(segments):
+                        if i == 0 and not segments[i].strip():
+                            i += 1
+                            continue
+                        
+                        if i + 1 < len(segments):
+                            role_marker = segments[i]
+                            content = segments[i + 1].strip()
+                            
+                            if content:  # Only add non-empty messages
+                                if role_marker == 'user':
+                                    messages.append(("user", content))
+                                elif role_marker == 'agent':
+                                    messages.append(("assistant", content))
+                            
+                            i += 2
+                        else:
+                            i += 1
+                
+                # Parts[1] contains the newest message
+                if len(conversation_parts) > 1 and hasattr(conversation_parts[1], 'kind') and conversation_parts[1].kind == 'text' and hasattr(conversation_parts[1], 'text'):
+                    messages.append(("user", conversation_parts[1].text))
+                else:
+                    # If no parts[1], use the query parameter
+                    messages.append(("user", query))
+            else:
+                # If no conversation history, just add the current query
+                messages.append(("user", query))
             # if self
             if self.tools:
                 # Bind tools to model for this call
