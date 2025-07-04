@@ -21,14 +21,10 @@ from a2a.types import (
 )
 
 from app.agent import PromptBasedAgent, ResponseFormat
-from rich.logging import RichHandler
+from app.rich_logging_config import get_rich_logger, log_info, log_error, log_warning, log_success, log_debug
 
-logging.basicConfig(
-    level="DEBUG",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s - Line %(lineno)d",
-    handlers=[RichHandler()],
-)
-logger = logging.getLogger(__name__)
+# Get logger with rich formatting
+logger = get_rich_logger(__name__)
 
 
 class CallAgentError(Exception):

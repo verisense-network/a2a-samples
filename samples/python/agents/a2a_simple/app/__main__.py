@@ -23,14 +23,14 @@ from app.agent_executor import PromptAgentExecutor
 from app.butler_agent import ButlerAgent
 from app.butler_executor import ButlerAgentExecutor
 from app.tools import get_btc_price
-from app.logging_config import setup_colored_logging, get_colored_logger
+from app.rich_logging_config import setup_rich_logging, get_rich_logger, log_info, log_error, log_warning
 
 
 load_dotenv()
 
-# Setup colored logging
-setup_colored_logging(level="INFO")
-logger = get_colored_logger(__name__)
+# Setup rich colored logging for the entire application
+setup_rich_logging(level="INFO")
+logger = get_rich_logger(__name__)
 
 
 class MissingAPIKeyError(Exception):

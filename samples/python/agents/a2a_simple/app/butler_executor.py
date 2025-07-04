@@ -22,9 +22,10 @@ from a2a.utils import (
 from a2a.utils.errors import ServerError
 
 from app.butler_agent import ButlerAgent
+from app.rich_logging_config import get_rich_logger, log_info, log_error, log_warning
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Get logger with rich formatting
+logger = get_rich_logger(__name__)
 
 
 class ButlerAgentExecutor(AgentExecutor):
