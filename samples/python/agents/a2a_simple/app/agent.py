@@ -155,7 +155,8 @@ class PromptBasedAgent:
                 print("=" * 50 + "\n")
                 # Parts[1] contains the newest message
                 if (
-                    hasattr(conversation_parts[1], "root")
+                    len(conversation_parts) > 1
+                    and hasattr(conversation_parts[1], "root")
                     and hasattr(conversation_parts[1].root, "kind")
                     and conversation_parts[1].root.kind == "text"
                     and hasattr(conversation_parts[1].root, "text")
@@ -276,6 +277,7 @@ class PromptBasedAgent:
             yield {
                 "is_task_complete": False,
                 "require_user_input": True,
+                "error": True,
                 "content": f"Error processing request: {str(e)}",
             }
 

@@ -20,13 +20,17 @@ from dotenv import load_dotenv
 
 from app.agent import PromptBasedAgent
 from app.agent_executor import PromptAgentExecutor
+from app.butler_agent import ButlerAgent
+from app.butler_executor import ButlerAgentExecutor
 from app.tools import get_btc_price
+from app.logging_config import setup_colored_logging, get_colored_logger
 
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Setup colored logging
+setup_colored_logging(level="INFO")
+logger = get_colored_logger(__name__)
 
 
 class MissingAPIKeyError(Exception):
@@ -63,7 +67,12 @@ def load_agent_config(agent_index: int = 0):
     default=-1,
     help="Index of agent in agent-prompts.json (0-99). If not specified, runs a generic agent.",
 )
-def main(host, port, agent_index):
+@click.option(
+    "--butler",
+    is_flag=True,
+    help="Run as butler agent that orchestrates other agents",
+)
+def main(host, port, agent_index, butler):
     """Starts the Agent server."""
     try:
         if os.getenv("model_source", "google") == "google":
@@ -82,40 +91,103 @@ def main(host, port, agent_index):
         agent_name = "AI Assistant"
         agent_prompt = "You are a helpful AI assistant."
 
-        if agent_index >= 0:
+        # Check if running as butler
+        if butler:
+            agent_name = "Butler Agent"
+            agent_prompt = ButlerAgent.BUTLER_PROMPT
+            logger.info("Running as Enhanced Butler Agent - Orchestrator")
+        elif agent_index >= 0:
             agent_config = load_agent_config(agent_index)
             if agent_config:
                 agent_name = agent_config.get("name", agent_name)
                 agent_prompt = agent_config.get("prompt", agent_prompt)
                 logger.info(f"Loaded agent: {agent_name}")
 
-        capabilities = AgentCapabilities(streaming=True, pushNotifications=True)
-        skill = AgentSkill(
-            id=f'{agent_name.lower().replace(" ", "_")}_skill',
-            name=f"{agent_name} Assistant",
-            description=f"AI assistant specialized as {agent_name}",
-            tags=[agent_name.lower(), "assistant", "ai"],
-            examples=[f"Help me with {agent_name.lower()} related tasks"],
-        )
-        agent_card = AgentCard(
-            name=agent_name,
-            description=f"{agent_name} - AI Assistant",
-            url=f"http://34.57.6.105/p{port}",
-            # url=f"http://localhost:{port}",
-            version="1.0.0",
-            defaultInputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
-            defaultOutputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
-            capabilities=capabilities,
-            skills=[skill],
-        )
+        # Load appropriate agent card
+        if butler:
+            # Load the enhanced butler agent card
+            try:
+                with open("app/butler-agent-card.json", "r") as f:
+                    butler_card_data = json.load(f)
+
+                # Convert the JSON data to AgentCard
+                capabilities = AgentCapabilities(
+                    **butler_card_data.get("capabilities", {})
+                )
+                skills = [
+                    AgentSkill(**skill_data)
+                    for skill_data in butler_card_data.get("skills", [])
+                ]
+
+                agent_card = AgentCard(
+                    name=butler_card_data["name"],
+                    description=butler_card_data["description"],
+                    url=f"http://localhost:{port}",
+                    version=butler_card_data["version"],
+                    defaultInputModes=butler_card_data["defaultInputModes"],
+                    defaultOutputModes=butler_card_data["defaultOutputModes"],
+                    capabilities=capabilities,
+                    skills=skills,
+                )
+
+                logger.info("Loaded enhanced butler agent card")
+
+            except Exception as e:
+                logger.warning(f"Failed to load butler agent card: {e}, using default")
+                # Fallback to default card
+                capabilities = AgentCapabilities(streaming=True, pushNotifications=True)
+                skill = AgentSkill(
+                    id="butler_orchestration",
+                    name="Butler Agent Orchestrator",
+                    description="Orchestrates multiple AI agents",
+                    tags=["butler", "orchestrator", "multi-agent"],
+                    examples=["Coordinate multiple agents to complete complex tasks"],
+                )
+                agent_card = AgentCard(
+                    name=agent_name,
+                    description="Enhanced Butler Agent - Intelligent Orchestrator",
+                    url=f"http://localhost:{port}",
+                    version="2.0.0",
+                    defaultInputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
+                    defaultOutputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
+                    capabilities=capabilities,
+                    skills=[skill],
+                )
+        else:
+            # Standard agent card for non-butler agents
+            capabilities = AgentCapabilities(streaming=True, pushNotifications=True)
+            skill = AgentSkill(
+                id=f'{agent_name.lower().replace(" ", "_")}_skill',
+                name=f"{agent_name} Assistant",
+                description=f"AI assistant specialized as {agent_name}",
+                tags=[agent_name.lower(), "assistant", "ai"],
+                examples=[f"Help me with {agent_name.lower()} related tasks"],
+            )
+            agent_card = AgentCard(
+                name=agent_name,
+                description=f"{agent_name} - AI Assistant",
+                url=f"http://localhost:{port}",
+                version="1.0.0",
+                defaultInputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
+                defaultOutputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
+                capabilities=capabilities,
+                skills=[skill],
+            )
 
         # --8<-- [start:DefaultRequestHandler]
         httpx_client = httpx.AsyncClient()
-        request_handler = DefaultRequestHandler(
-            agent_executor=PromptAgentExecutor(
+
+        # Choose the appropriate executor
+        if butler:
+            agent_executor = ButlerAgentExecutor()
+        else:
+            agent_executor = PromptAgentExecutor(
                 system_prompt=agent_prompt,
                 use_tools=[get_btc_price] if agent_index == 2 else None,
-            ),
+            )
+
+        request_handler = DefaultRequestHandler(
+            agent_executor=agent_executor,
             task_store=InMemoryTaskStore(),
             push_notifier=InMemoryPushNotifier(httpx_client),
         )

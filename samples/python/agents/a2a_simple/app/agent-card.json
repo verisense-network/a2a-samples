@@ -1,0 +1,38 @@
+{
+    "capabilities": {
+        "pushNotifications": true,
+        "streaming": true
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "description": "BTC Price Inquiry - AI Assistant",
+    "name": "BTC Price Bot",
+    "skills": [
+        {
+            "description": "AI assistant specialized in Bitcoin price inquiries",
+            "examples": [
+                "What's the current BTC price?",
+                "Tell me the Bitcoin price",
+                "How much is Bitcoin worth now?"
+            ],
+            "id": "btc_price_inquiry_skill",
+            "name": "BTC Price Inquiry Assistant",
+            "tags": [
+                "btc",
+                "bitcoin",
+                "price",
+                "cryptocurrency",
+                "assistant",
+                "ai"
+            ]
+        }
+    ],
+    "url": "http://34.57.6.105/p10004",
+    "version": "1.0.0"
+}

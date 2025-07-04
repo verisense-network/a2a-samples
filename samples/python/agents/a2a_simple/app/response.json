@@ -1,0 +1,263 @@
+{
+    "jsonrpc": "2.0",
+    "method": "message/stream",
+    "params": {
+        "message": {
+            "messageId": "user_007edd30-389d-4799-8d6f-188b1556c3b0",
+            "contextId": "419b09e4-0a05-4003-afbe-794a626ed522",
+            "role": "user",
+            "parts": [
+                {
+                    "kind": "text",
+                    "text": "@[Data Analyst](kGgEDgbsiYxW88S9GdY5eN4kAskYBhBC64BjDJMxUN5jwce4S) hello"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "hello"
+                },
+                {
+                    "kind": "text",
+                    "text": "Hello! How can I help you today?\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "who are you"
+                },
+                {
+                    "kind": "text",
+                    "text": "I am an intelligent routing proxy.  I help you connect with the most appropriate agent for your needs from a list you provide.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Project Manager](kGiCda99HbWSUCx7WqyoFoGMPHd6Gzs78km4s7rMUMZYFMPcZ) 我想设计一个产品"
+                },
+                {
+                    "kind": "text",
+                    "text": "✅ 在产品设计方面，我能为您提供哪些帮助？例如，我可以协助您定义产品目标、计算时间表、分配资源、管理风险、生成项目报告、管理项目沟通、解决冲突、管理利益相关者以及确保符合质量标准。\n"
+                },
+                {
+                    "kind": "text",
+                    "text": "产品目标是吃汉堡"
+                },
+                {
+                    "kind": "text",
+                    "text": "To achieve the product goal of eating a hamburger, you'll need to define what aspects you need help with.  Do you need help with the design, marketing, or something else?  Please clarify your request.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "对的"
+                },
+                {
+                    "kind": "text",
+                    "text": "Please clarify your request.  \"对的\" (duì de) only confirms understanding, but doesn't specify what assistance you need regarding the product goal of eating a hamburger.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "我叫你爹"
+                },
+                {
+                    "kind": "text",
+                    "text": "I am an AI assistant.  To help you further, please clarify your request.  The statement \"我叫你爹\" (wǒ jiào nǐ diē) is inappropriate and does not provide context for your question.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "我名字叫你爹"
+                },
+                {
+                    "kind": "text",
+                    "text": "I understand you're saying your name is \"你爹\" (nǐ diē), which translates to \"your father.\"  However, this doesn't help me understand your request. Please tell me what you need help with.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "我名字叫ha'ha'h"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "hahah"
+                },
+                {
+                    "kind": "text",
+                    "text": "Okay, your name is ha'ha'hhahahhahah.  Please tell me what you need help with.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "我叫啥"
+                },
+                {
+                    "kind": "text",
+                    "text": "You asked \"我叫啥?\" (wǒ jiào shá?), which means \"What's my name?\".  Your name is ha'ha'hhahahhahah.  What can I help you with?\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "你是谁"
+                },
+                {
+                    "kind": "text",
+                    "text": "You asked \"你是谁?\" (nǐ shì shuí?), which means \"Who are you?\". I am an AI routing proxy.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "我们玩个游戏"
+                },
+                {
+                    "kind": "text",
+                    "text": "What kind of game would you like to play?\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "猜猜我是谁"
+                },
+                {
+                    "kind": "text",
+                    "text": "Okay, I'll play \"Guess Who I Am\".  Ask me yes/no questions to try and figure out what I am.\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "来吧"
+                },
+                {
+                    "kind": "text",
+                    "text": "Okay, ask away!\n "
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Data Analyst](kGgEDgbsiYxW88S9GdY5eN4kAskYBhBC64BjDJMxUN5jwce4S) 帮我分析一下"
+                },
+                {
+                    "kind": "text",
+                    "text": "✅ To analyze something, I need you to provide me with the data or tell me what you would like me to analyze. Please provide me with the necessary information.\n"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Data Analyst](kGgEDgbsiYxW88S9GdY5eN4kAskYBhBC64BjDJMxUN5jwce4S) 我是谁"
+                },
+                {
+                    "kind": "text",
+                    "text": "⏲️ analyzing the data\n⏲️ searching for tools\n⏲️ asking for BTC price\n✅ To analyze who you are, I need you to provide me with some information about yourself.  For example, you could tell me about your interests, skills, or background.\n"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Frontend Engineer](kGfqXhcArPByHzNVLS8RNUTZtptX5dRHafRG2EFvBPsGMT78r) 你能干嘛"
+                },
+                {
+                    "kind": "text",
+                    "text": "✅ I can design user-friendly interfaces, implement responsive designs, optimize web pages for speed and scalability, and debug and resolve issues. I am proficient in HTML, CSS, JavaScript, and frameworks like React.js. What can I help you with today?\n"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Frontend Engineer](kGfqXhcArPByHzNVLS8RNUTZtptX5dRHafRG2EFvBPsGMT78r) 帮我生成btc"
+                },
+                {
+                    "kind": "text",
+                    "text": "✅ I can't generate Bitcoin. I am a frontend engineer and can help you with creating user interfaces.\n"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Data Analyst](kGgEDgbsiYxW88S9GdY5eN4kAskYBhBC64BjDJMxUN5jwce4S) 帮我生成btc价格"
+                },
+                {
+                    "kind": "text",
+                    "text": "⏲️ analyzing the data\n⏲️ searching for tools\n⏲️ asking for BTC price\n✅ I cannot directly generate the BTC price, but I can provide you with the current BTC price. According to the data I have, the current price is 109638 USD, with a 24-hour change of 1.86%. The market capitalization is 2180482182756.19 USD, and the 24-hour volume is 32934355158.93 USD.\n"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Frontend Engineer](kGfqXhcArPByHzNVLS8RNUTZtptX5dRHafRG2EFvBPsGMT78r) btc"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Frontend Engineer](kGfqXhcArPByHzNVLS8RNUTZtptX5dRHafRG2EFvBPsGMT78r) BTC什么价格"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Frontend Engineer](kGfqXhcArPByHzNVLS8RNUTZtptX5dRHafRG2EFvBPsGMT78r) BTC"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "Error processing request: 'PromptBasedAgent' object has no attribute 'tools'"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Frontend Engineer](kGfqXhcArPByHzNVLS8RNUTZtptX5dRHafRG2EFvBPsGMT78r) BTC价格"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "Error processing request: 'PromptBasedAgent' object has no attribute 'tools'"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Sales Operations](kGjshbJReAAbc31nWSEhZLo25oQVvVMmnCWB4sv9mvqCcxWBT) BTC price"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "Error processing request: 'PromptBasedAgent' object has no attribute 'tools'"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Sales Operations](kGjshbJReAAbc31nWSEhZLo25oQVvVMmnCWB4sv9mvqCcxWBT) btc price"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "Error processing request: cannot access local variable 'model_with_tools' where it is not associated with a value"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Sales Operations](kGjshbJReAAbc31nWSEhZLo25oQVvVMmnCWB4sv9mvqCcxWBT) btc price"
+                },
+                {
+                    "kind": "text",
+                    "text": "✅ I am sorry, I cannot fulfill this request. There was an error and I do not have access to the appropriate tools to provide this information. Please try again later.\n"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Frontend Engineer](kGfqXhcArPByHzNVLS8RNUTZtptX5dRHafRG2EFvBPsGMT78r) btc price"
+                },
+                {
+                    "kind": "text",
+                    "text": "Sorry, an error occurred while processing the message: HTTP error establishing stream for message/stream: 502 . RPC Error: undefined (Code: undefined). Please try again later."
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Sales Operations](kGjshbJReAAbc31nWSEhZLo25oQVvVMmnCWB4sv9mvqCcxWBT) btc price"
+                },
+                {
+                    "kind": "text",
+                    "text": "@[Sales Operations](kGjshbJReAAbc31nWSEhZLo25oQVvVMmnCWB4sv9mvqCcxWBT) btc price"
+                }
+            ],
+            "kind": "message"
+        }
+    },
+    "id": 1
+}
