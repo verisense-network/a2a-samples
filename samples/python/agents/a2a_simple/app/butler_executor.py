@@ -13,6 +13,7 @@ from a2a.types import (
     Task,
     TaskState,
     UnsupportedOperationError,
+    Artifact,
 )
 from a2a.utils import (
     new_agent_text_message,
@@ -42,34 +43,49 @@ class ButlerAgentExecutor(AgentExecutor):
             raise ServerError(error=InvalidParamsError())
 
         query = context.get_user_input()
-        
+
         # Extract conversation history from message parts
         conversation_parts = []
-        if context.message and hasattr(context.message, 'parts'):
+        if context.message and hasattr(context.message, "parts"):
             conversation_parts = context.message.parts
-        
+
         task = context.current_task
         if not task:
             task = new_task(context.message)  # type: ignore
             await event_queue.enqueue_event(task)
         updater = TaskUpdater(event_queue, task.id, task.contextId)
-        
+
         try:
-            async for item in self.agent.stream(query, task.contextId, conversation_parts):
+            async for item in self.agent.stream(
+                query, task.contextId, conversation_parts
+            ):
                 is_task_complete = item["is_task_complete"]
                 require_user_input = item["require_user_input"]
-                
+                artifact = item.get("artifact", None)
+
                 logger.info(f"Butler executor: {item}")
 
                 if not is_task_complete and not require_user_input:
-                    await updater.update_status(
-                        TaskState.working,
-                        new_agent_text_message(
-                            item["content"],
-                            task.contextId,
-                            task.id,
-                        ),
-                    )
+                    if artifact:
+                        # Type assertion to ensure artifact is an Artifact object
+                        assert isinstance(
+                            artifact, Artifact
+                        ), f"Expected Artifact object, got {type(artifact)}"
+                        await updater.add_artifact(
+                            parts=artifact.parts,
+                            artifact_id=artifact.artifactId,
+                            name=artifact.name,
+                            metadata=artifact.metadata,
+                        )
+                    else:
+                        await updater.update_status(
+                            TaskState.working,
+                            new_agent_text_message(
+                                item["content"],
+                                task.contextId,
+                                task.id,
+                            ),
+                        )
                 elif require_user_input:
                     await updater.update_status(
                         TaskState.input_required,

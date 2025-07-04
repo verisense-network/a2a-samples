@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import List, Dict, Any, AsyncIterable
+from typing import List, Dict, Any, AsyncIterable, Optional, Tuple
 from uuid import uuid4
 import httpx
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -17,6 +17,7 @@ from a2a.types import (
     TaskStatusUpdateEvent,
     TaskArtifactUpdateEvent,
     TaskState,
+    Artifact,
 )
 
 from app.agent import PromptBasedAgent, ResponseFormat
@@ -145,7 +146,7 @@ You have access to query all available A2A agents and coordinate their responses
 
     async def call_agent(
         self, agent_info: AgentInfo, query: str, context: str = ""
-    ) -> str:
+    ) -> Tuple[str, List[Artifact]]:
         """Call a specific A2A agent using the A2A protocol with streaming"""
         # Increase timeout for code generation agents
         timeout = httpx.Timeout(120.0, connect=30.0)
@@ -199,6 +200,7 @@ You have access to query all available A2A agents and coordinate their responses
                 artifact_content = []  # Store artifact content as we receive it
 
                 stream_response = client.send_message_streaming(streaming_request)
+                artifact_list = []
                 try:
                     async for chunk in stream_response:
                         logger.debug(f"Streaming chunk type: {type(chunk)}")
@@ -254,7 +256,12 @@ You have access to query all available A2A agents and coordinate their responses
                             # Handle TaskArtifactUpdateEvent
                             elif isinstance(result, TaskArtifactUpdateEvent):
                                 logger.debug(f"Artifact update event: {result}")
-                                if hasattr(result, "artifact") and result.artifact:
+                                if (
+                                    hasattr(result, "artifact")
+                                    and result.artifact
+                                    and isinstance(result.artifact, Artifact)
+                                ):
+                                    artifact_list.append(result.artifact)
                                     # Get artifact name if available
                                     artifact_name = getattr(
                                         result.artifact,
@@ -560,15 +567,15 @@ You have access to query all available A2A agents and coordinate their responses
 
                 # Return the final response
                 if task_completed and final_response:
-                    return final_response
+                    return final_response, artifact_list
                 elif task_completed:
-                    return "Task completed but no response text found"
+                    return "Task completed but no response text found", []
                 else:
                     # If we have artifacts but no completion status, still return them
                     if artifact_content:
                         logger.info("Returning artifacts despite no completion status")
-                        return "\n\n".join(artifact_content)
-                    return "Task did not complete within timeout"
+                        return "\n\n".join(artifact_content), []
+                    return "Task did not complete within timeout", []
 
             except Exception as e:
                 logger.error(f"Error calling agent {agent_info.name}: {e}")
@@ -612,7 +619,7 @@ Return the plan as a structured response."""
             yield {
                 "is_task_complete": False,
                 "require_user_input": False,
-                "content": "⏲️ Querying available agents...",
+                "content": "⏲️ Querying available agents...\n",
             }
 
             agents = await self.query_available_agents()
@@ -620,14 +627,14 @@ Return the plan as a structured response."""
             yield {
                 "is_task_complete": False,
                 "require_user_input": False,
-                "content": f"⏲️ Found {len(agents)} available agents",
+                "content": f"⏲️ Found {len(agents)} available agents\n",
             }
 
             # Step 2: Create execution plan
             yield {
                 "is_task_complete": False,
                 "require_user_input": False,
-                "content": "⏲️ Creating execution plan...",
+                "content": "⏲️ Creating execution plan...\n",
             }
 
             plan = await self.create_execution_plan(query)
@@ -635,7 +642,7 @@ Return the plan as a structured response."""
             yield {
                 "is_task_complete": False,
                 "require_user_input": False,
-                "content": f"⏲️ Plan created with {len(plan.steps)} steps",
+                "content": f"⏲️ Plan created with {len(plan.steps)} steps\n",
             }
 
             # Step 3: Execute plan
@@ -652,7 +659,7 @@ Return the plan as a structured response."""
                 yield {
                     "is_task_complete": False,
                     "require_user_input": False,
-                    "content": f"⏲️ Step {i+1}: Calling {step.agent_name} - {step.task_description}",
+                    "content": f"⏲️ Step {i+1}: Calling {step.agent_name} - {step.task_description}\n",
                 }
 
                 # Build context from dependent steps
@@ -670,13 +677,19 @@ Return the plan as a structured response."""
                     step_context = accumulated_context
 
                 # Call the agent
-                result = await self.call_agent(
+                result, artifact_list = await self.call_agent(
                     agent_info, step.task_description, step_context
                 )
                 logger.info(
                     f"Agent {step.agent_name} returned: {result[:200]}..."
                 )  # Log first 200 chars
                 results.append(result)
+                for artifact in artifact_list:
+                    yield {
+                        "is_task_complete": False,
+                        "require_user_input": False,
+                        "artifact": artifact,
+                    }
 
                 # Store artifact if it looks like code
                 if "```" in result or result.strip().startswith("#"):
@@ -688,7 +701,7 @@ Return the plan as a structured response."""
             yield {
                 "is_task_complete": False,
                 "require_user_input": False,
-                "content": "⏲️ Synthesizing final answer...",
+                "content": "⏲️ Synthesizing final answer...\n",
             }
 
             # Use LLM to create final summary
