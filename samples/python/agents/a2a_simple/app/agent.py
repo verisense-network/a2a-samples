@@ -99,76 +99,76 @@ class PromptBasedAgent:
             )
             messages = [("system", system_message)]
 
-            # Add conversation history from parts if available
-            if conversation_parts and len(conversation_parts) > 0:
-                # Parts[0] contains the conversation context with [user] and [agent] markers
-                if (
-                    hasattr(conversation_parts[0], "root")
-                    and hasattr(conversation_parts[0].root, "kind")
-                    and conversation_parts[0].root.kind == "text"
-                    and hasattr(conversation_parts[0].root, "text")
-                ):
-                    context_text = conversation_parts[0].root.text
-                    print(context_text)
-                    # Split by [user] and [agent] markers
-                    import re
+            # # Add conversation history from parts if available
+            # if conversation_parts and len(conversation_parts) > 0:
+            #     # Parts[0] contains the conversation context with [user] and [agent] markers
+            #     if (
+            #         hasattr(conversation_parts[0], "root")
+            #         and hasattr(conversation_parts[0].root, "kind")
+            #         and conversation_parts[0].root.kind == "text"
+            #         and hasattr(conversation_parts[0].root, "text")
+            #     ):
+            #         context_text = conversation_parts[0].root.text
+            #         print(context_text)
+            #         # Split by [user] and [agent] markers
+            #         import re
 
-                    # Split the context into segments
-                    segments = re.split(r"\[(user|agent)\]", context_text)
+            #         # Split the context into segments
+            #         segments = re.split(r"\[(user|agent)\]", context_text)
 
-                    # Note: The conversation history should ideally only include messages
-                    # relevant to the current agent to avoid confusion. If multiple agents
-                    # are involved, consider filtering messages by agent ID or name.
-                    # for i, segment in enumerate(segments):
-                    #     print(i, segment)
-                    # Process segments (skip first empty segment if exists)
-                    i = 0
-                    while i < len(segments):
-                        if i == 0 and not segments[i].strip():
-                            i += 1
-                            continue
+            #         # Note: The conversation history should ideally only include messages
+            #         # relevant to the current agent to avoid confusion. If multiple agents
+            #         # are involved, consider filtering messages by agent ID or name.
+            #         # for i, segment in enumerate(segments):
+            #         #     print(i, segment)
+            #         # Process segments (skip first empty segment if exists)
+            #         i = 0
+            #         while i < len(segments):
+            #             if i == 0 and not segments[i].strip():
+            #                 i += 1
+            #                 continue
 
-                        if i + 1 < len(segments):
-                            role_marker = segments[i]
-                            content = segments[i + 1].strip()
+            #             if i + 1 < len(segments):
+            #                 role_marker = segments[i]
+            #                 content = segments[i + 1].strip()
 
-                            if content:  # Only add non-empty messages
-                                if role_marker == "user":
-                                    messages.append(("user", content))
-                                elif role_marker == "agent":
-                                    messages.append(("assistant", content))
+            #                 if content:  # Only add non-empty messages
+            #                     if role_marker == "user":
+            #                         messages.append(("user", content))
+            #                     elif role_marker == "agent":
+            #                         messages.append(("assistant", content))
 
-                            i += 2
-                        else:
-                            i += 1
-                # Keep only the system message and last 10 conversation messages
-                if len(messages) > 20:  # 1 system message + 19 conversation messages
-                    messages = [messages[0]] + messages[-19:]
+            #                 i += 2
+            #             else:
+            #                 i += 1
+            #     # Keep only the system message and last 10 conversation messages
+            #     if len(messages) > 20:  # 1 system message + 19 conversation messages
+            #         messages = [messages[0]] + messages[-19:]
 
-                # Debug: Print conversation history being sent to AI
-                print(
-                    f"\n=== Conversation History (Total: {len(messages)} messages) ==="
-                )
-                for i, (role, content) in enumerate(messages):
-                    preview = content[:100] + "..." if len(content) > 100 else content
-                    print(f"[{i}] {role}: {preview}")
-                print("=" * 50 + "\n")
-                # Parts[1] contains the newest message
-                if (
-                    len(conversation_parts) > 1
-                    and hasattr(conversation_parts[1], "root")
-                    and hasattr(conversation_parts[1].root, "kind")
-                    and conversation_parts[1].root.kind == "text"
-                    and hasattr(conversation_parts[1].root, "text")
-                    and len(conversation_parts) > 1
-                ):
-                    messages.append(("user", conversation_parts[1].root.text))
-                else:
-                    # If no parts[1], use the query parameter
-                    messages.append(("user", query))
-            else:
-                # If no conversation history, just add the current query
-                messages.append(("user", query))
+            #     # Debug: Print conversation history being sent to AI
+            #     print(
+            #         f"\n=== Conversation History (Total: {len(messages)} messages) ==="
+            #     )
+            #     for i, (role, content) in enumerate(messages):
+            #         preview = content[:100] + "..." if len(content) > 100 else content
+            #         print(f"[{i}] {role}: {preview}")
+            #     print("=" * 50 + "\n")
+            #     # Parts[1] contains the newest message
+            #     if (
+            #         len(conversation_parts) > 1
+            #         and hasattr(conversation_parts[1], "root")
+            #         and hasattr(conversation_parts[1].root, "kind")
+            #         and conversation_parts[1].root.kind == "text"
+            #         and hasattr(conversation_parts[1].root, "text")
+            #         and len(conversation_parts) > 1
+            #     ):
+            #         messages.append(("user", conversation_parts[1].root.text))
+            #     else:
+            #         # If no parts[1], use the query parameter
+            #         messages.append(("user", query))
+            # else:
+            #     # If no conversation history, just add the current query
+            messages.append(("user", query))
             # if self
             if self.tools:
                 # Bind tools to model for this call

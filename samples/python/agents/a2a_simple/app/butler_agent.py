@@ -615,8 +615,6 @@ Return the plan as a structured response."""
         self, query: str, context_id: str, conversation_parts=None
     ) -> AsyncIterable[dict[str, Any]]:
         """Stream the butler agent's execution process"""
-        logger.info(f"Query : {query}")
-        logger.info(f"Parts: {conversation_parts}")
         try:
             # Step 1: Query available agents
             yield {
