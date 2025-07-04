@@ -23,7 +23,13 @@ from app.agent_executor import PromptAgentExecutor
 from app.butler_agent import ButlerAgent
 from app.butler_executor import ButlerAgentExecutor
 from app.tools import get_btc_price
-from app.rich_logging_config import setup_rich_logging, get_rich_logger, log_info, log_error, log_warning
+from app.rich_logging_config import (
+    setup_rich_logging,
+    get_rich_logger,
+    log_info,
+    log_error,
+    log_warning,
+)
 
 
 load_dotenv()
@@ -85,7 +91,7 @@ def main(host, port, agent_index, butler):
                 raise MissingAPIKeyError(
                     "TOOL_LLM_NAME environment not variable not set."
                 )
-
+        url = os.getenv("URL") + str(port)
         # Load agent configuration if specified
         agent_config = None
         agent_name = "AI Assistant"
@@ -123,7 +129,8 @@ def main(host, port, agent_index, butler):
                     name=butler_card_data["name"],
                     description=butler_card_data["description"],
                     # url=f"http://localhost:{port}",
-                    url=f"http://34.57.6.105/p{port}",
+                    # url=f"http://34.57.6.105/p{port}",
+                    url=url,
                     version=butler_card_data["version"],
                     defaultInputModes=butler_card_data["defaultInputModes"],
                     defaultOutputModes=butler_card_data["defaultOutputModes"],
@@ -148,7 +155,8 @@ def main(host, port, agent_index, butler):
                     name=agent_name,
                     description="Enhanced Butler Agent - Intelligent Orchestrator",
                     # url=f"http://localhost:{port}",
-                    url=f"http://34.57.6.105/p{port}",
+                    # url=f"http://34.57.6.105/p{port}",
+                    url=url,
                     version="2.0.0",
                     defaultInputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
                     defaultOutputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
@@ -169,7 +177,8 @@ def main(host, port, agent_index, butler):
                 name=agent_name,
                 description=f"{agent_name} - AI Assistant",
                 # url=f"http://localhost:{port}",
-                url=f"http://34.57.6.105/p{port}",
+                # url=f"http://34.57.6.105/p{port}",
+                url=url,
                 version="1.0.0",
                 defaultInputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
                 defaultOutputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,

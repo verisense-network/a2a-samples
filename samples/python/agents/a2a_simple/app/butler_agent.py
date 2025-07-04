@@ -591,7 +591,6 @@ You have access to query all available A2A agents and coordinate their responses
 
         # Get available agents
         self.available_agents = await self.query_available_agents()
-
         # Use LLM to create execution plan
         plan_prompt = f"""Given the user query and available agents, create an execution plan.
 
@@ -616,7 +615,8 @@ Return the plan as a structured response."""
         self, query: str, context_id: str, conversation_parts=None
     ) -> AsyncIterable[dict[str, Any]]:
         """Stream the butler agent's execution process"""
-
+        logger.info(f"Query : {query}")
+        logger.info(f"Parts: {conversation_parts}")
         try:
             # Step 1: Query available agents
             yield {

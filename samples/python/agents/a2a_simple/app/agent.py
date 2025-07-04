@@ -109,7 +109,7 @@ class PromptBasedAgent:
                     and hasattr(conversation_parts[0].root, "text")
                 ):
                     context_text = conversation_parts[0].root.text
-
+                    print(context_text)
                     # Split by [user] and [agent] markers
                     import re
 
