@@ -1,0 +1,10 @@
+FROM node:18.18.2-alpine3.18 AS builder
+
+WORKDIR /workspace/app
+
+COPY . .
+RUN npm install
+
+EXPOSE 8080 8080
+
+CMD ["npm", "run", "agents:coder"]

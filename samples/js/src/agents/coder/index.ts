@@ -27,12 +27,12 @@ class CoderAgentExecutor implements AgentExecutor {
   private cancelledTasks = new Set<string>();
 
   public cancelTask = async (
-        taskId: string,
-        eventBus: ExecutionEventBus,
-    ): Promise<void> => {
-        this.cancelledTasks.add(taskId);
-        // The execute loop is responsible for publishing the final state
-    };
+    taskId: string,
+    eventBus: ExecutionEventBus,
+  ): Promise<void> => {
+    this.cancelledTasks.add(taskId);
+    // The execute loop is responsible for publishing the final state
+  };
 
   async execute(
     requestContext: RequestContext,
@@ -175,6 +175,9 @@ class CoderAgentExecutor implements AgentExecutor {
                 append: false, // Each emission is a complete file snapshot
                 lastChunk: true, // True for this file artifact
               };
+
+              if (!prevFilename) continue;
+
               eventBus.publish(artifactUpdate);
               emittedFileCount++;
             }
@@ -202,10 +205,10 @@ class CoderAgentExecutor implements AgentExecutor {
 
       // After the loop, emit any remaining files that haven't been yielded
       for (let i = emittedFileCount; i < fileOrder.length; i++) {
-        const filename = fileOrder[i];
+        const filename: string | null = fileOrder[i];
         const content = fileContents.get(filename) ?? "";
         console.log(
-          `[CoderAgentExecutor] Emitting final file artifact(index ${i}): ${filename} `
+          `[CoderAgentExecutor] Emitting final file artifact(index ${i}): ${filename} artifactId: ${filename}`
         );
         const artifactUpdate: TaskArtifactUpdateEvent = {
           kind: 'artifact-update',
@@ -219,6 +222,9 @@ class CoderAgentExecutor implements AgentExecutor {
           append: false,
           lastChunk: true,
         };
+
+        if (!filename) continue;
+
         eventBus.publish(artifactUpdate);
       }
 
@@ -292,7 +298,8 @@ const coderAgentCard: AgentCard = {
   name: 'Coder Agent',
   description:
     'An agent that generates code based on natural language instructions and streams file outputs.',
-  url: 'https://agent-coder-974618882715.europe-west1.run.app', // Adjusted port and base URL
+  // url: 'http://localhost:8080', // Adjusted port and base URL
+  url: 'https://agent-coder-974618882715.us-east1.run.app', // Adjusted port and base URL
   provider: {
     organization: 'A2A Samples',
     url: 'https://example.com/a2a-samples',
@@ -344,7 +351,7 @@ async function main() {
   const expressApp = appBuilder.setupRoutes(express(), '');
 
   // 5. Start the server
-  const PORT = process.env.CODER_AGENT_PORT || 41242; // Different port for coder agent
+  const PORT = process.env.CODER_AGENT_PORT || 8080; // Different port for coder agent
   expressApp.listen(PORT, () => {
     console.log(`[CoderAgent] Server using new framework started on http://localhost:${PORT}`);
     console.log(`[CoderAgent] Agent Card: http://localhost:${PORT}/.well-known/agent.json`);

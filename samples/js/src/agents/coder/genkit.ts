@@ -11,13 +11,18 @@ if (!process.env.CLIENT_EMAIL || !process.env.PRIVATE_KEY || !process.env.PROJEC
 }
 
 export const ai = genkit({
-  plugins: [vertexAI({
-    googleAuth: {
-      credentials: {
-        client_email: process.env.CLIENT_EMAIL,
-        private_key: process.env.PRIVATE_KEY,
-      }
-    }, projectId: process.env.PROJECT_ID, location: process.env.LOCATION })],
+  plugins: [
+    vertexAI({
+      googleAuth: {
+        credentials: {
+          client_email: process.env.CLIENT_EMAIL,
+          private_key: process.env.PRIVATE_KEY,
+        }
+      },
+      projectId: process.env.PROJECT_ID,
+      location: process.env.LOCATION,
+    })
+  ],
   model: vertexAI.model("gemini-2.0-flash"),
 });
 
