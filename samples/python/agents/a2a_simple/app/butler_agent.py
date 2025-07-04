@@ -21,7 +21,14 @@ from a2a.types import (
 )
 
 from app.agent import PromptBasedAgent, ResponseFormat
-from app.rich_logging_config import get_rich_logger, log_info, log_error, log_warning, log_success, log_debug
+from app.rich_logging_config import (
+    get_rich_logger,
+    log_info,
+    log_error,
+    log_warning,
+    log_success,
+    log_debug,
+)
 
 # Get logger with rich formatting
 logger = get_rich_logger(__name__)
@@ -655,7 +662,7 @@ Return the plan as a structured response."""
                 yield {
                     "is_task_complete": False,
                     "require_user_input": False,
-                    "content": f"⏲️ Step {i+1}: Calling {step.agent_name} - {step.task_description}\n",
+                    "content": f"⏲️ Step {i+1}: @[{step.agent_name}] - {step.task_description}\n",
                 }
 
                 # Build context from dependent steps
