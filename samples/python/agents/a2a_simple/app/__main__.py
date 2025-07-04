@@ -122,7 +122,8 @@ def main(host, port, agent_index, butler):
                 agent_card = AgentCard(
                     name=butler_card_data["name"],
                     description=butler_card_data["description"],
-                    url=f"http://localhost:{port}",
+                    # url=f"http://localhost:{port}",
+                    url=f"https://34.57.6.105/p{port}",
                     version=butler_card_data["version"],
                     defaultInputModes=butler_card_data["defaultInputModes"],
                     defaultOutputModes=butler_card_data["defaultOutputModes"],
@@ -166,7 +167,8 @@ def main(host, port, agent_index, butler):
             agent_card = AgentCard(
                 name=agent_name,
                 description=f"{agent_name} - AI Assistant",
-                url=f"http://localhost:{port}",
+                # url=f"http://localhost:{port}",
+                url=f"https://34.57.6.105/p{port}",
                 version="1.0.0",
                 defaultInputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
                 defaultOutputModes=PromptBasedAgent.SUPPORTED_CONTENT_TYPES,
