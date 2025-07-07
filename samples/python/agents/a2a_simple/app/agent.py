@@ -229,8 +229,8 @@ class PromptBasedAgent:
                 # }
                 # await asyncio.sleep(3)
                 yield {
-                    "is_task_complete": True,
-                    "require_user_input": False,
+                    "is_task_complete": final_response.status == "completed",
+                    "require_user_input": final_response.status == "input_required",
                     "content": final_response.message,
                 }
             else:
@@ -238,8 +238,8 @@ class PromptBasedAgent:
                 structured_model = self.model.with_structured_output(ResponseFormat)
                 response = structured_model.invoke(messages)
                 yield {
-                    "is_task_complete": True,
-                    "require_user_input": False,
+                    "is_task_complete": response.status == "completed",
+                    "require_user_input": response.status == "input_required",
                     "content": response.message,
                 }
             # Return response based on status
