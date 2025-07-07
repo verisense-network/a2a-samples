@@ -919,8 +919,8 @@ IMPORTANT:
 
             response = self.model.invoke(messages)
 
-            # Get evaluation summary for all agents
-            evaluation_summary = self._get_evaluation_summary()
+            # Get evaluation summary for agents used in this execution
+            evaluation_summary = self._get_execution_evaluation_summary(plan.steps)
 
             # Always complete the task - never require user input
             yield {
@@ -956,6 +956,54 @@ IMPORTANT:
         """Get evaluation history for a specific agent"""
         return self.evaluation_db.get_agent_evaluations(agent_id, limit)
 
+    def _get_execution_evaluation_summary(self, steps: List[TaskStep]) -> str:
+        """Get evaluation summary only for agents used in this execution"""
+        try:
+            if not steps:
+                return ""
+            
+            summary = "\n📊 **Agent Evaluation Summary for This Execution**\n"
+            summary += "=" * 50 + "\n"
+            
+            # Get unique agents from this execution
+            executed_agents = {}
+            for step in steps:
+                if step.agent_key not in executed_agents:
+                    executed_agents[step.agent_key] = step.agent_name
+            
+            # Get evaluation data for each agent
+            for agent_key, agent_name in executed_agents.items():
+                # Get the most recent evaluation for this agent
+                recent_evals = self.evaluation_db.get_agent_evaluations(agent_key, limit=1)
+                if recent_evals:
+                    latest_eval = recent_evals[0]
+                    
+                    summary += f"\n**{agent_name}:**\n"
+                    summary += f"- Final Score (Weighted): {latest_eval['score']:.1f}/100\n"
+                    
+                    # Show current score if available
+                    if latest_eval.get('current_score') is not None:
+                        summary += f"- Current Evaluation: {latest_eval['current_score']:.1f}/100\n"
+                    
+                    # Get agent stats for historical average
+                    agent_stats = self.evaluation_db.get_agent_stats(agent_key)
+                    if agent_stats:
+                        summary += f"- Historical Average: {agent_stats['average_score']:.1f}/100\n"
+                        summary += f"- Total Past Evaluations: {agent_stats['total_evaluations']}\n"
+                    
+                    # Parse and show evaluation reason
+                    reason = latest_eval.get('evaluation_reason', '')
+                    if reason:
+                        # Extract just the main reason, not the score details
+                        main_reason = reason.split(' (Current:')[0] if ' (Current:' in reason else reason
+                        summary += f"- Evaluation: {main_reason}\n"
+            
+            return summary
+            
+        except Exception as e:
+            logger.error(f"Error generating execution evaluation summary: {e}")
+            return ""
+    
     def _get_evaluation_summary(self) -> str:
         """Get a formatted summary of agent evaluations"""
         try:
