@@ -20,8 +20,8 @@ from dotenv import load_dotenv
 
 from app.agent import PromptBasedAgent
 from app.agent_executor import PromptAgentExecutor
-from app.butler_agent import ButlerAgent
-from app.butler_executor import ButlerAgentExecutor
+from butler.butler_agent import ButlerAgent
+from butler.butler_executor import ButlerAgentExecutor
 from app.tools import get_btc_price
 from app.rich_logging_config import (
     setup_rich_logging,
@@ -113,7 +113,7 @@ def main(host, port, agent_index, butler):
         if butler:
             # Load the enhanced butler agent card
             try:
-                with open("app/butler-agent-card.json", "r") as f:
+                with open("butler/butler-agent-card.json", "r") as f:
                     butler_card_data = json.load(f)
 
                 # Convert the JSON data to AgentCard
