@@ -617,8 +617,7 @@ You have access to query all available A2A agents and coordinate their responses
                         {
                             "state": "input_required",
                             "task_id": task_id_from_stream,
-                            "context_id": context_id
-                            or streaming_request.params.message.get("contextId"),
+                            "context_id": context_id or task_id_from_stream,
                             "message": final_response,
                         },
                     )
