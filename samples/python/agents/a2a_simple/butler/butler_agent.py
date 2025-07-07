@@ -78,15 +78,6 @@ class ExecutionPlan(BaseModel):
     final_summary: str = ""
 
 
-class PendingAgentTask(BaseModel):
-    """Track an agent task that requires user input"""
-    agent_info: AgentInfo
-    task_id: str
-    context_id: str
-    step_index: int
-    original_query: str
-
-
 class ButlerAgent(PromptBasedAgent):
     """Butler agent that orchestrates multiple A2A agents"""
 
@@ -112,7 +103,6 @@ You have access to query all available A2A agents and coordinate their responses
         super().__init__(system_prompt=self.BUTLER_PROMPT, use_tools=None)
         self.rpc_url = rpc_url
         self.available_agents: List[AgentInfo] = []
-        self.pending_tasks: Dict[str, PendingAgentTask] = {}  # context_id -> pending task
 
     async def query_available_agents(self) -> List[AgentInfo]:
         """Query the RPC endpoint to get list of available A2A agents"""
@@ -159,7 +149,12 @@ You have access to query all available A2A agents and coordinate their responses
         return []
 
     async def call_agent(
-        self, agent_info: AgentInfo, query: str, context: str = "", task_id: str = None, context_id: str = None
+        self,
+        agent_info: AgentInfo,
+        query: str,
+        context: str = "",
+        task_id: str = None,
+        context_id: str = None,
     ) -> Tuple[str, List[Artifact], Optional[Dict]]:
         """Call a specific A2A agent using the A2A protocol with streaming"""
         # Increase timeout for code generation agents
@@ -208,7 +203,7 @@ You have access to query all available A2A agents and coordinate their responses
                 )
 
                 # Stream the response and wait for completion
-                final_response = None
+                final_response = ""
                 task_completed = False
                 task_requires_input = False
                 task_id_from_stream = None
@@ -245,7 +240,7 @@ You have access to query all available A2A agents and coordinate their responses
                             if isinstance(result, TaskStatusUpdateEvent):
                                 if hasattr(result, "taskId"):
                                     task_id_from_stream = result.taskId
-                                    
+
                                 if hasattr(result, "status") and hasattr(
                                     result.status, "state"
                                 ):
@@ -268,8 +263,20 @@ You have access to query all available A2A agents and coordinate their responses
                                                     ) and hasattr(part.root, "text"):
                                                         text = part.root.text
                                                         if text:
-                                                            final_response = text
-                                    
+                                                            final_response += text
+                                    elif task_state == TaskState.working:
+                                        if (
+                                            hasattr(result.status, "message")
+                                            and result.status.message
+                                        ):
+                                            if hasattr(result.status.message, "parts"):
+                                                for part in result.status.message.parts:
+                                                    if hasattr(
+                                                        part, "root"
+                                                    ) and hasattr(part.root, "text"):
+                                                        text = part.root.text
+                                                        if text:
+                                                            final_response += text
                                     # Check if task is completed
                                     elif task_state == TaskState.completed:
                                         task_completed = True
@@ -288,7 +295,7 @@ You have access to query all available A2A agents and coordinate their responses
                                                             text
                                                             and not text.startswith("⏲️")
                                                         ):
-                                                            final_response = text
+                                                            final_response += text
 
                             # Handle TaskArtifactUpdateEvent
                             elif isinstance(result, TaskArtifactUpdateEvent):
@@ -580,7 +587,7 @@ You have access to query all available A2A agents and coordinate their responses
                                             text = part.root.text
                                             # Keep track of non-progress messages
                                             if text and not text.startswith("⏲️"):
-                                                final_response = text
+                                                final_response += text
 
                 except Exception as stream_error:
                     logger.error(
@@ -589,9 +596,9 @@ You have access to query all available A2A agents and coordinate their responses
                     raise CallAgentError(
                         f"Error during streaming, attempting to extract response from chunks: {stream_error}"
                     )
-
+                logger.info(f"Final response: {final_response}")
                 # If we collected artifact content but no final response, use the artifacts
-                if not final_response and artifact_content:
+                if final_response == "" and artifact_content:
                     final_response = "\n\n".join(artifact_content)
                     # If we have artifacts, consider it completed
                     if not task_completed and artifact_content:
@@ -604,15 +611,20 @@ You have access to query all available A2A agents and coordinate their responses
 
                 # Handle input required case
                 if task_requires_input:
-                    return final_response or "User input required", artifact_list, {
-                        "state": "input_required",
-                        "task_id": task_id_from_stream,
-                        "context_id": context_id or streaming_request.params.message.get("contextId"),
-                        "message": final_response
-                    }
+                    return (
+                        final_response or "User input required",
+                        artifact_list,
+                        {
+                            "state": "input_required",
+                            "task_id": task_id_from_stream,
+                            "context_id": context_id
+                            or streaming_request.params.message.get("contextId"),
+                            "message": final_response,
+                        },
+                    )
 
                 # Return the final response
-                if task_completed and final_response:
+                if task_completed and final_response != "":
                     return final_response, artifact_list, None
                 elif task_completed:
                     return "Task completed but no response text found", [], None
@@ -643,6 +655,12 @@ Available Agents:
 {json.dumps([{"name": a.name, "key": a.key, "description": a.description} for a in self.available_agents], indent=2)}
 
 Create a step-by-step plan to accomplish this task using the available agents.
+
+IMPORTANT: 
+- When the user's request is vague (e.g., "help me design something"), the first step should be to gather more information
+- Don't make assumptions about what the user wants - let the specialized agents ask for clarification
+- Include the original user query context when calling agents so they can ask follow-up questions if needed
+
 Return the plan as a structured response."""
 
         messages = [("system", self.BUTLER_PROMPT), ("user", plan_prompt)]
@@ -659,51 +677,6 @@ Return the plan as a structured response."""
     ) -> AsyncIterable[dict[str, Any]]:
         """Stream the butler agent's execution process"""
         try:
-            # Check if we have a pending task for this context
-            if context_id in self.pending_tasks:
-                pending = self.pending_tasks[context_id]
-                yield {
-                    "is_task_complete": False,
-                    "require_user_input": False,
-                    "content": f"⏲️ Resuming task with @[{pending.agent_info.name}]...\n",
-                }
-                
-                # Continue the pending task with user input
-                result, artifact_list, task_state = await self.call_agent(
-                    pending.agent_info,
-                    query,  # This is the user's input response
-                    "",
-                    pending.task_id,
-                    pending.context_id
-                )
-                
-                # Clean up pending task
-                del self.pending_tasks[context_id]
-                
-                # Check if still requires input
-                if task_state and task_state.get("state") == "input_required":
-                    yield {
-                        "is_task_complete": False,
-                        "require_user_input": True,
-                        "content": task_state.get("message", "Please provide additional input"),
-                    }
-                    return
-                
-                # Process artifacts
-                for artifact in artifact_list:
-                    yield {
-                        "is_task_complete": False,
-                        "require_user_input": False,
-                        "artifact": artifact,
-                    }
-                
-                # Return the result
-                yield {
-                    "is_task_complete": True,
-                    "require_user_input": False,
-                    "content": f"✅ {result}",
-                }
-                return
             # Step 1: Query available agents
             yield {
                 "is_task_complete": False,
@@ -765,32 +738,39 @@ Return the plan as a structured response."""
                 ):
                     step_context = accumulated_context
 
+                # For the first step or when no context, include the original user query
+                # This ensures agents get the full context of what the user wants
+                if i == 0 or not step_context:
+                    full_query = f"User request: {query}\n\nSpecific task: {step.task_description}"
+                else:
+                    full_query = step.task_description
+
                 # Call the agent
                 result, artifact_list, task_state = await self.call_agent(
-                    agent_info, step.task_description, step_context
+                    agent_info, full_query, step_context
                 )
-                
+                logger.info(
+                    f"Agent {step.agent_name} returned: {result[:200]}, task_state: {task_state}"
+                )
                 # Check if agent requires user input
                 if task_state and task_state.get("state") == "input_required":
-                    # Store pending task info
-                    self.pending_tasks[context_id] = PendingAgentTask(
-                        agent_info=agent_info,
-                        task_id=task_state.get("task_id"),
-                        context_id=task_state.get("context_id", context_id),
-                        step_index=i,
-                        original_query=query
+                    # Butler handles this internally - add to results and continue
+                    input_message = task_state.get(
+                        "message", "Agent requires additional information"
                     )
-                    
-                    yield {
-                        "is_task_complete": False,
-                        "require_user_input": True,
-                        "content": f"@[{step.agent_name}] requires input: {task_state.get('message', 'Please provide additional information')}",
-                    }
-                    return  # Stop execution and wait for user input
-                
-                logger.info(
-                    f"Agent {step.agent_name} returned: {result[:200]}..."
-                )  # Log first 200 chars
+                    result = f"[{step.agent_name} needs clarification: {input_message}]"
+                    logger.info(
+                        f"Agent {step.agent_name} requires input - butler will handle this in final summary"
+                    )
+
+                # Check if the agent returned an empty or generic response
+                if result == "Task completed but no response text found":
+                    # This might indicate the agent needs more information
+                    logger.warning(
+                        f"Agent {step.agent_name} returned empty response - may need clarification"
+                    )
+                    result = f"[{step.agent_name} completed the task but provided no specific response - this may indicate that more specific information is needed]"
+
                 results.append(result)
                 for artifact in artifact_list:
                     yield {
@@ -820,12 +800,19 @@ Original Query: {query}
 Execution Results:
 {accumulated_context}
 
-Synthesize all the information into a clear, coherent response. If code was generated, include it in your response."""
+Synthesize all the information into a clear, coherent response. If code was generated, include it in your response.
+
+IMPORTANT: 
+- If any agent indicated they need more specific information (e.g., empty responses, requests for clarification, or "needs clarification" messages), 
+  you MUST provide a helpful response that guides the user on what specific information is needed.
+- Do NOT ask for input or wait for more information - provide a complete response with clear guidance.
+- Example: If an Industrial Designer needs to know what to design, suggest specific options or ask clarifying questions in your final response."""
 
             messages = [("system", self.BUTLER_PROMPT), ("user", summary_prompt)]
 
             response = self.model.invoke(messages)
 
+            # Always complete the task - never require user input
             yield {
                 "is_task_complete": True,
                 "require_user_input": False,

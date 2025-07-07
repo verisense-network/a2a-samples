@@ -64,8 +64,6 @@ class ButlerAgentExecutor(AgentExecutor):
                 require_user_input = item["require_user_input"]
                 artifact = item.get("artifact", None)
 
-                logger.info(f"Butler executor: {item}")
-
                 if not is_task_complete and not require_user_input:
                     if artifact:
                         # Type assertion to ensure artifact is an Artifact object
