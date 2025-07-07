@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import time
 from typing import List, Dict, Any, AsyncIterable, Optional, Tuple
 from uuid import uuid4
 import httpx
@@ -30,6 +31,8 @@ from app.rich_logging_config import (
     log_success,
     log_debug,
 )
+from .evaluation import AgentEvaluationDB, AgentEvaluator, EvaluationRecord
+import datetime
 
 # Get logger with rich formatting
 logger = get_rich_logger(__name__)
@@ -99,10 +102,17 @@ When creating execution plans:
 
 You have access to query all available A2A agents and coordinate their responses to provide comprehensive solutions."""
 
-    def __init__(self, rpc_url: str = "https://rpc.beta.verisense.network"):
+    def __init__(self, rpc_url: str = "https://rpc.beta.verisense.network", llm=None):
         super().__init__(system_prompt=self.BUTLER_PROMPT, use_tools=None)
         self.rpc_url = rpc_url
         self.available_agents: List[AgentInfo] = []
+
+        # Initialize evaluation system
+        self.evaluation_db = AgentEvaluationDB()
+        self.evaluator = AgentEvaluator(
+            llm or self.model
+        )  # Use self.model instead of self.llm
+        logger.info("Initialized Butler with agent evaluation system")
 
     async def query_available_agents(self) -> List[AgentInfo]:
         """Query the RPC endpoint to get list of available A2A agents"""
@@ -622,17 +632,31 @@ You have access to query all available A2A agents and coordinate their responses
                         },
                     )
 
+                # Return the final response with artifact content included
+                combined_response = final_response
+                if artifact_content:
+                    # Include artifact content in the response for evaluation
+                    combined_response = (
+                        final_response + "\n\n" + "\n\n".join(artifact_content)
+                        if final_response
+                        else "\n\n".join(artifact_content)
+                    )
+
                 # Return the final response
-                if task_completed and final_response != "":
-                    return final_response, artifact_list, None
+                if task_completed and combined_response != "":
+                    return combined_response, artifact_list, None
                 elif task_completed:
-                    return "Task completed but no response text found", [], None
+                    return (
+                        "Task completed but no response text found",
+                        artifact_list,
+                        None,
+                    )
                 else:
                     # If we have artifacts but no completion status, still return them
                     if artifact_content:
                         logger.info("Returning artifacts despite no completion status")
-                        return "\n\n".join(artifact_content), [], None
-                    return "Task did not complete within timeout", [], None
+                        return combined_response, artifact_list, None
+                    return "Task did not complete within timeout", artifact_list, None
 
             except Exception as e:
                 logger.error(f"Error calling agent {agent_info.name}: {e}")
@@ -744,13 +768,95 @@ Return the plan as a structured response."""
                 else:
                     full_query = step.task_description
 
-                # Call the agent
+                # Call the agent and measure response time
+                start_time = time.time()
                 result, artifact_list, task_state = await self.call_agent(
                     agent_info, full_query, step_context
                 )
+                response_time_ms = (time.time() - start_time) * 1000
+
                 logger.info(
                     f"Agent {step.agent_name} returned: {result[:200]}, task_state: {task_state}"
                 )
+
+                # Evaluate the agent's response
+                evaluation_info = ""
+                try:
+                    # Determine if agent provided a response
+                    # Note: 'result' already includes artifact content from call_agent
+                    agent_response = (
+                        None if result == "No response from agent" else result
+                    )
+
+                    # Get evaluation score, reason and breakdown
+                    current_score, reason, breakdown = await self.evaluator.evaluate_response(
+                        user_query=full_query,
+                        agent_response=agent_response,
+                        agent_name=step.agent_name,
+                        response_time_ms=response_time_ms,
+                    )
+                    
+                    # Get historical average score for this agent
+                    agent_stats = self.evaluation_db.get_agent_stats(step.agent_key)
+                    if agent_stats and agent_stats['total_evaluations'] > 0:
+                        # Calculate weighted average: 70% current score, 30% historical average
+                        historical_avg = agent_stats['average_score']
+                        final_score = (0.7 * current_score) + (0.3 * historical_avg)
+                        reason = f"{reason} (Current: {current_score:.1f}, Historical Avg: {historical_avg:.1f})"
+                    else:
+                        # First evaluation for this agent, use current score
+                        final_score = current_score
+
+                    # Create evaluation record with the weighted score
+                    evaluation_record = EvaluationRecord(
+                        agent_id=step.agent_key,
+                        agent_name=step.agent_name,
+                        task_id=context_id,
+                        user_query=full_query,
+                        agent_response=agent_response,
+                        score=final_score,
+                        evaluation_reason=reason,
+                        score_breakdown=breakdown,
+                        current_score=current_score,
+                        response_time_ms=response_time_ms,
+                        timestamp=datetime.datetime.now(),
+                    )
+
+                    # Store in database
+                    self.evaluation_db.add_evaluation(evaluation_record)
+                    
+                    # Use final_score for display
+                    score = final_score
+
+                    # Format evaluation details for display
+                    evaluation_info = f"\n📊 **Agent Evaluation: {step.agent_name}**\n"
+                    evaluation_info += f"- Final Score (Weighted): {score:.1f}/100\n"
+                    if agent_stats and agent_stats['total_evaluations'] > 0:
+                        evaluation_info += f"- Current Score: {current_score:.1f}/100\n"
+                        evaluation_info += f"- Historical Average: {historical_avg:.1f}/100\n"
+                        evaluation_info += f"- Past Evaluations: {agent_stats['total_evaluations']}\n"
+                    evaluation_info += "- Score Breakdown:\n"
+                    evaluation_info += (
+                        f"  • Relevance: {breakdown.get('relevance', 0):.1f}/30\n"
+                    )
+                    evaluation_info += (
+                        f"  • Completeness: {breakdown.get('completeness', 0):.1f}/25\n"
+                    )
+                    evaluation_info += (
+                        f"  • Accuracy: {breakdown.get('accuracy', 0):.1f}/25\n"
+                    )
+                    evaluation_info += (
+                        f"  • Clarity: {breakdown.get('clarity', 0):.1f}/20\n"
+                    )
+                    evaluation_info += f"- Response Time: {response_time_ms:.0f}ms\n"
+
+                    logger.info(
+                        f"Evaluated {step.agent_name}: Score={score:.1f}, Reason={reason}..."
+                    )
+
+                except Exception as eval_error:
+                    logger.error(f"Error evaluating agent response: {eval_error}")
+                    # Don't fail the execution due to evaluation errors
                 # Check if agent requires user input
                 if task_state and task_state.get("state") == "input_required":
                     # Butler handles this internally - add to results and continue
@@ -783,6 +889,8 @@ Return the plan as a structured response."""
                     artifacts[step.agent_name] = result
 
                 accumulated_context += f"\n\n{step.agent_name}: {result}"
+                if evaluation_info:
+                    accumulated_context += evaluation_info
 
             # Step 4: Synthesize final answer
             yield {
@@ -811,11 +919,14 @@ IMPORTANT:
 
             response = self.model.invoke(messages)
 
+            # Get evaluation summary for all agents
+            evaluation_summary = self._get_evaluation_summary()
+
             # Always complete the task - never require user input
             yield {
                 "is_task_complete": True,
                 "require_user_input": False,
-                "content": f"✅ {response.content}",
+                "content": f"✅ {response.content}\n\n{evaluation_summary}",
             }
 
         except Exception as e:
@@ -826,3 +937,76 @@ IMPORTANT:
                 "error": True,
                 "content": f"❌ Error during execution: {str(e)}",
             }
+
+    def get_agent_stats(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """Get evaluation statistics for a specific agent"""
+        return self.evaluation_db.get_agent_stats(agent_id)
+
+    def get_all_agent_stats(self) -> List[Dict[str, Any]]:
+        """Get evaluation statistics for all agents"""
+        return self.evaluation_db.get_all_agent_stats()
+
+    def get_recent_evaluations(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get recent evaluation records"""
+        return self.evaluation_db.get_recent_evaluations(limit)
+
+    def get_agent_evaluations(
+        self, agent_id: str, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """Get evaluation history for a specific agent"""
+        return self.evaluation_db.get_agent_evaluations(agent_id, limit)
+
+    def _get_evaluation_summary(self) -> str:
+        """Get a formatted summary of agent evaluations"""
+        try:
+            all_stats = self.evaluation_db.get_all_agent_stats()
+
+            if not all_stats:
+                return ""
+
+            summary = "\n📈 **Agent Performance Summary (Weighted Scores)**\n"
+            summary += "=" * 50 + "\n"
+            summary += "Note: Scores are weighted (70% current + 30% historical)\n"
+
+            # Top performers
+            top_agents = sorted(
+                all_stats, key=lambda x: x["average_score"], reverse=True
+            )[:5]
+            summary += "\n🏆 **Top Performing Agents:**\n"
+            for i, agent in enumerate(top_agents, 1):
+                summary += (
+                    f"{i}. {agent['agent_name']}: {agent['average_score']:.1f}/100 "
+                )
+                summary += f"({agent['total_evaluations']} evaluations)\n"
+
+            # Recent performance trends
+            recent_evals = self.evaluation_db.get_recent_evaluations(10)
+            if recent_evals:
+                summary += "\n📊 **Recent Evaluation Scores:**\n"
+                for eval_rec in recent_evals[:5]:
+                    summary += (
+                        f"- {eval_rec['agent_name']}: {eval_rec['score']:.1f}/100\n"
+                    )
+
+            # Overall statistics
+            total_evaluations = sum(agent["total_evaluations"] for agent in all_stats)
+            avg_score = (
+                sum(
+                    agent["average_score"] * agent["total_evaluations"]
+                    for agent in all_stats
+                )
+                / total_evaluations
+                if total_evaluations > 0
+                else 0
+            )
+
+            summary += f"\n📌 **Overall Statistics:**\n"
+            summary += f"- Total Evaluations: {total_evaluations}\n"
+            summary += f"- Average Score: {avg_score:.1f}/100\n"
+            summary += f"- Active Agents: {len(all_stats)}\n"
+
+            return summary
+
+        except Exception as e:
+            logger.error(f"Error generating evaluation summary: {e}")
+            return ""
