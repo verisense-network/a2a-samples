@@ -193,12 +193,19 @@ You have access to query all available A2A agents and coordinate their responses
                     httpx_client=httpx_client, agent_card=agent_card, url=agent_info.url
                 )
 
-                # Prepare the message with context
+                # Prepare the message with context and instructions
                 full_query = query
                 if context:
                     full_query = (
                         f"Context from previous agents:\n{context}\n\nTask: {query}"
                     )
+                
+                # Add instruction to prevent agents from asking questions back
+                full_query = (
+                    f"{full_query}\n\nIMPORTANT: Please provide a direct response without asking "
+                    "questions back to the user. If you need specific information, make reasonable "
+                    "assumptions or provide options/suggestions rather than asking for clarification."
+                )
 
                 # Step 3: Use streaming to monitor task progress
                 streaming_request = SendStreamingMessageRequest(
@@ -767,6 +774,13 @@ Return the plan as a structured response."""
                     full_query = f"User request: {query}\n\nSpecific task: {step.task_description}"
                 else:
                     full_query = step.task_description
+                
+                # Add instruction to prevent agents from asking questions back
+                full_query = (
+                    f"{full_query}\n\nIMPORTANT: Please provide a direct response without asking "
+                    "questions back to the user. If you need specific information, make reasonable "
+                    "assumptions or provide options/suggestions rather than asking for clarification."
+                )
 
                 # Call the agent and measure response time
                 start_time = time.time()
