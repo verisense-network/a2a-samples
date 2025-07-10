@@ -158,27 +158,27 @@ def get_rich_logger(name: str, level: str = "INFO") -> logging.Logger:
 # Convenience function to log with custom styles
 def log_success(logger: logging.Logger, message: str):
     """Log a success message with green color"""
-    logger.info(f"[success]✅ {message}[/success]")
+    logger.info(f"[success]✅ {message}[/success]", stacklevel=2)
 
 
 def log_error(logger: logging.Logger, message: str):
     """Log an error message with red color"""
-    logger.error(f"[error]❌ {message}[/error]")
+    logger.error(f"[error]❌ {message}[/error]", stacklevel=2)
 
 
 def log_warning(logger: logging.Logger, message: str):
     """Log a warning message with yellow color"""
-    logger.warning(f"[warning]⚠️  {message}[/warning]")
+    logger.warning(f"[warning]⚠️  {message}[/warning]", stacklevel=2)
 
 
 def log_info(logger: logging.Logger, message: str):
     """Log an info message with cyan color"""
-    logger.info(f"[info]ℹ️  {message}[/info]")
+    logger.info(f"[info]ℹ️  {message}[/info]", stacklevel=2)
 
 
 def log_debug(logger: logging.Logger, message: str):
     """Log a debug message with dim cyan color"""
-    logger.debug(f"[debug]🔍 {message}[/debug]")
+    logger.debug(f"[debug]🔍 {message}[/debug]", stacklevel=2)
 
 
 # Example usage
