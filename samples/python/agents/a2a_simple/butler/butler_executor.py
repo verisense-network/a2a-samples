@@ -39,11 +39,14 @@ class ButlerAgentExecutor(AgentExecutor):
         context: RequestContext,
         event_queue: EventQueue,
     ) -> None:
+        log_info(logger, "Butler executor started - received request from frontend")
+        
         error = self._validate_request(context)
         if error:
             raise ServerError(error=InvalidParamsError())
 
         query = context.get_user_input()
+        log_info(logger, f"Butler received query: {query}")
 
         # Extract conversation history from message parts
         conversation_parts = []
@@ -57,9 +60,14 @@ class ButlerAgentExecutor(AgentExecutor):
         updater = TaskUpdater(event_queue, task.id, task.contextId)
 
         try:
+            log_info(logger, "Starting butler agent streaming")
+            item_count = 0
             async for item in self.agent.stream(
                 query, task.contextId, conversation_parts
             ):
+                item_count += 1
+                log_info(logger, f"Received stream item #{item_count}: is_complete={item.get('is_task_complete')}, requires_input={item.get('require_user_input')}, has_artifact={bool(item.get('artifact'))}")
+                
                 is_task_complete = item["is_task_complete"]
                 require_user_input = item["require_user_input"]
                 artifact = item.get("artifact", None)
@@ -70,42 +78,70 @@ class ButlerAgentExecutor(AgentExecutor):
                         assert isinstance(
                             artifact, Artifact
                         ), f"Expected Artifact object, got {type(artifact)}"
-                        await updater.add_artifact(
-                            parts=artifact.parts,
-                            artifact_id=artifact.artifactId,
-                            name=artifact.name,
-                            metadata=artifact.metadata,
-                        )
+                        log_info(logger, f"Butler sending artifact to frontend: {artifact.name} (id: {artifact.artifactId})")
+                        try:
+                            await updater.add_artifact(
+                                parts=artifact.parts,
+                                artifact_id=artifact.artifactId,
+                                name=artifact.name,
+                                metadata=artifact.metadata,
+                            )
+                            log_info(logger, f"Successfully sent artifact {artifact.name} to frontend")
+                        except Exception as e:
+                            log_error(logger, f"Failed to send artifact to frontend: {e}")
+                            raise
                     else:
+                        content = item["content"]
+                        log_info(logger, f"Butler sending message to frontend (working): {content[:200]}..." if len(content) > 200 else f"Butler sending message to frontend (working): {content}")
+                        try:
+                            await updater.update_status(
+                                TaskState.working,
+                                new_agent_text_message(
+                                    content,
+                                    task.contextId,
+                                    task.id,
+                                ),
+                            )
+                            log_info(logger, "Successfully sent working message to frontend")
+                        except Exception as e:
+                            log_error(logger, f"Failed to send working message to frontend: {e}")
+                            raise
+                elif require_user_input:
+                    content = item["content"]
+                    log_info(logger, f"Butler sending input required message to frontend: {content[:200]}..." if len(content) > 200 else f"Butler sending input required message to frontend: {content}")
+                    try:
                         await updater.update_status(
-                            TaskState.working,
+                            TaskState.input_required,
                             new_agent_text_message(
-                                item["content"],
+                                content,
+                                task.contextId,
+                                task.id,
+                            ),
+                            final=True,
+                        )
+                        log_info(logger, "Successfully sent input required message to frontend")
+                    except Exception as e:
+                        log_error(logger, f"Failed to send input required message to frontend: {e}")
+                        raise
+                    break
+                else:
+                    content = item["content"]
+                    log_info(logger, f"Butler sending completion message to frontend: {content[:200]}..." if len(content) > 200 else f"Butler sending completion message to frontend: {content}")
+                    try:
+                        await updater.update_status(
+                            TaskState.completed,
+                            new_agent_text_message(
+                                content,
                                 task.contextId,
                                 task.id,
                             ),
                         )
-                elif require_user_input:
-                    await updater.update_status(
-                        TaskState.input_required,
-                        new_agent_text_message(
-                            item["content"],
-                            task.contextId,
-                            task.id,
-                        ),
-                        final=True,
-                    )
-                    break
-                else:
-                    await updater.update_status(
-                        TaskState.completed,
-                        new_agent_text_message(
-                            item["content"],
-                            task.contextId,
-                            task.id,
-                        ),
-                    )
-                    await updater.complete()
+                        log_info(logger, "Successfully sent completion message to frontend")
+                        await updater.complete()
+                        log_info(logger, "Successfully marked task as complete")
+                    except Exception as e:
+                        log_error(logger, f"Failed to send completion message or mark task complete: {e}")
+                        raise
                     break
 
         except Exception as e:
